@@ -1,0 +1,36 @@
+{
+  "name": "intellilink-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intellilink Network Operations & Governance Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:simulator\"",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:simulator": "npm run dev -w apps/simulator",
+    "dev:ai": "cd apps/ai-service && python -m uvicorn main:app --reload --port 8100",
+    "build": "npm run build -w packages/types && npm run build -w packages/config && npm run build -w apps/api && npm run build -w apps/web",
+    "build:types": "npm run build -w packages/types",
+    "db:migrate": "npm run migration:run -w apps/api",
+    "db:seed": "npm run seed -w apps/api",
+    "db:reset": "npm run db:reset -w apps/api",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test -w apps/api",
+    "test:web": "npm run test -w apps/web",
+    "test:e2e": "npm run test:e2e -w apps/api",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

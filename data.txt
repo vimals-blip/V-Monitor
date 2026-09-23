@@ -1,0 +1,2720 @@
+# ROLE
+
+You are the lead architect and senior implementation team responsible for building a production-grade network operations, multi-tenant connectivity control-plane and AI-assisted NOC platform for Intellilink.
+
+This is NOT a UI prototype.
+
+This is NOT a static dashboard.
+
+This is NOT a Figma-style mockup.
+
+This is NOT a fake-data SaaS demo.
+
+Build a deployable software product with real backend services, real database persistence, real authentication, real authorization, real telemetry ingestion, real monitoring, real automation, real audit logs, real API contracts, real AI tool integration, real infrastructure adapters, automated tests, Docker deployment and production-grade error handling.
+
+The resulting system must be capable of being connected to real Intellilink PoPs, aggregators and gateways through well-defined adapters.
+
+Where physical networking equipment is unavailable during development, use a simulator/mock adapter behind the exact same production interfaces.
+
+NEVER put simulated values directly into React components.
+
+---
+
+# 1. PRODUCT
+
+Product name:
+
+**Intellilink Network Operations & Governance Platform**
+
+Short name:
+
+**Intellilink NOG**
+
+The platform is a centralized multi-tenant control plane for Intellilink's enterprise connectivity infrastructure.
+
+Intellilink's intended architecture is:
+
+Starlink / WAN
+↓
+Intellilink Gateway
+↓
+Encrypted Secure Tunnel
+↓
+Intellilink ISP Governance PoP
+↓
+Aggregator
+↓
+ISP Core
+↓
+Internet
+
+The platform manages and monitors the control plane around this architecture.
+
+The application itself must NOT become the high-throughput packet forwarding plane.
+
+Packet forwarding remains in the network infrastructure.
+
+The software provides:
+
+* orchestration
+* provisioning
+* tenant management
+* gateway management
+* tunnel management
+* PoP management
+* aggregator management
+* routing management
+* policy management
+* firewall/NAT management
+* telemetry
+* observability
+* alerts
+* incidents
+* automation
+* audit
+* reporting
+* AI-assisted operations
+
+---
+
+# 2. PRODUCT BENCHMARKS
+
+Use these real products as functional references:
+
+1. Cisco Catalyst SD-WAN Manager
+2. Versa Concerto
+3. Turnium multi-tenant SD-WAN/aggregator model
+
+Do NOT copy:
+
+* proprietary code
+* proprietary assets
+* logos
+* copyrighted screenshots
+* exact UI
+* proprietary protocols
+
+Use them only to understand enterprise networking product workflows.
+
+Cisco's current multitenancy model has provider and tenant roles/views, shared control components with logical tenant isolation, provider-as-tenant management, tenant provisioning and network monitoring.
+
+The product should provide equivalent categories of operational capability, adapted to Intellilink's architecture.
+
+---
+
+# 3. CORE BUSINESS PURPOSE
+
+The system must allow Intellilink to operate hundreds or thousands of customer sites from one control plane.
+
+It must answer:
+
+* Which customers are connected?
+* Which sites are healthy?
+* Which sites are degraded?
+* Which gateways are offline?
+* Which tunnels are down?
+* Which WAN link is failing?
+* Which PoP is affected?
+* Which aggregator is overloaded?
+* Which tenants are affected?
+* What changed?
+* Who changed it?
+* What is the probable root cause?
+* What action should the operator take?
+* Can the system automatically recover?
+* Can a new customer/site be provisioned automatically?
+* Can customers see their own network?
+* Can Intellilink produce SLA and audit reports?
+
+---
+
+# 4. NON-NEGOTIABLE DEVELOPMENT RULES
+
+## RULE 1 — NO FAKE FUNCTIONALITY
+
+Do not create buttons that only show:
+
+"Coming soon"
+
+Do not create fake success messages.
+
+Do not create UI actions that don't call a backend API.
+
+Do not create hard-coded dashboard metrics.
+
+Do not create fake charts.
+
+Do not create fake AI responses.
+
+Do not create fake network status inside React.
+
+Every visible operational value must originate from:
+
+* PostgreSQL
+* telemetry system
+* infrastructure adapter
+* simulator adapter
+
+---
+
+## RULE 2 — SIMULATOR MUST BE AN ADAPTER
+
+Development environment:
+
+Network Simulator
+↓
+Telemetry Adapter
+↓
+Same internal interfaces
+↓
+Backend
+↓
+Database/metrics
+↓
+Frontend
+
+Production:
+
+Real Gateway/PoP
+↓
+Real Telemetry Adapter
+↓
+Same internal interfaces
+↓
+Backend
+↓
+Database/metrics
+↓
+Frontend
+
+The frontend must not know whether data comes from simulation or production.
+
+Use:
+
+```text
+TelemetryProvider
+GatewayProvider
+TunnelProvider
+PopProvider
+AggregatorProvider
+RoutingProvider
+FirewallProvider
+DiagnosticsProvider
+```
+
+Implement:
+
+```text
+SimulatorTelemetryProvider
+SimulatorGatewayProvider
+...
+```
+
+and leave interfaces ready for:
+
+```text
+ProductionTelemetryProvider
+ProductionGatewayProvider
+...
+```
+
+---
+
+# 5. TECHNOLOGY STACK
+
+## Frontend
+
+Next.js
+TypeScript
+React
+Tailwind CSS
+shadcn/ui
+Lucide
+React Query/TanStack Query
+React Hook Form
+Zod
+React Flow
+ECharts/Recharts
+
+## Backend
+
+Node.js
+TypeScript
+NestJS
+
+Use modular architecture.
+
+Modules:
+
+```text
+Auth
+Organizations
+Tenants
+Users
+Sites
+PoPs
+Aggregators
+Gateways
+WAN
+Tunnels
+Routing
+Firewall
+NAT
+Policies
+Telemetry
+Monitoring
+Alerts
+Incidents
+Automation
+AI
+Reports
+Audit
+Notifications
+System Health
+```
+
+## AI service
+
+Python
+FastAPI
+
+Use:
+
+* provider-independent LLM interface
+* tool calling
+* RAG where appropriate
+* anomaly detection
+* incident analysis
+* structured output
+* confidence
+* evidence references
+
+## Database
+
+PostgreSQL
+
+## Cache
+
+Redis
+
+## Event system
+
+Start with Redis Streams.
+
+Design interfaces so Kafka/NATS can be added later.
+
+## Metrics
+
+Prometheus
+
+## Logs
+
+OpenTelemetry + Loki or OpenSearch
+
+## Visualization
+
+ECharts
+
+## Topology
+
+React Flow
+
+## Containers
+
+Docker Compose for development/small deployment.
+
+Kubernetes manifests/Helm-ready architecture for production.
+
+---
+
+# 6. REPOSITORY STRUCTURE
+
+Use a monorepo.
+
+```text
+intellilink-platform/
+
+apps/
+  web/
+  api/
+  ai-service/
+  simulator/
+
+packages/
+  types/
+  api-client/
+  config/
+  auth/
+  telemetry/
+  networking/
+  ui/
+
+infra/
+  docker/
+  prometheus/
+  grafana/
+  loki/
+  postgres/
+  redis/
+
+docs/
+  architecture/
+  api/
+  deployment/
+  networking/
+  security/
+
+tests/
+  e2e/
+  integration/
+  load/
+```
+
+---
+
+# 7. AUTHENTICATION
+
+Implement real authentication.
+
+Support:
+
+* email/password
+* secure password hashing
+* refresh tokens
+* session revocation
+* password reset
+* account lockout/rate limiting
+* optional TOTP/MFA architecture
+* audit login/logout
+* failed login tracking
+
+Never store plaintext passwords.
+
+Never store secrets in source code.
+
+Use environment variables/secrets manager interfaces.
+
+---
+
+# 8. MULTI-TENANCY
+
+Tenant isolation is a core security requirement.
+
+Every tenant-owned record must be scoped to:
+
+```text
+organization_id
+tenant_id
+```
+
+Never trust tenant IDs supplied by the frontend.
+
+The backend derives tenant access from authenticated identity/RBAC.
+
+Implement:
+
+```text
+Provider
+Provider Admin
+NOC Operator
+Tenant Admin
+Tenant Operator
+Auditor
+Read Only
+```
+
+Provider users can see all authorized tenants.
+
+Tenant users can only see their own tenant.
+
+All APIs must enforce this server-side.
+
+Add automated tests attempting cross-tenant access.
+
+Those tests must fail safely.
+
+---
+
+# 9. DATABASE
+
+Create real PostgreSQL migrations.
+
+Core entities:
+
+```text
+users
+roles
+permissions
+organizations
+tenants
+tenant_users
+
+pops
+aggregators
+
+sites
+gateways
+gateway_credentials
+wan_links
+tunnels
+
+subnets
+ip_allocations
+routes
+
+firewall_rules
+nat_rules
+policies
+policy_versions
+
+telemetry_sources
+metrics
+metric_samples
+
+alerts
+alert_rules
+
+incidents
+incident_events
+
+automation_rules
+automation_runs
+automation_actions
+
+ai_sessions
+ai_messages
+ai_tool_calls
+ai_recommendations
+ai_evidence
+
+audit_logs
+
+notifications
+notification_channels
+
+reports
+report_runs
+
+configuration_versions
+configuration_deployments
+
+system_health
+```
+
+Use:
+
+* UUIDs
+* timestamps
+* soft deletion where appropriate
+* foreign keys
+* unique constraints
+* indexes
+* optimistic concurrency where needed
+
+---
+
+# 10. OVERVIEW DASHBOARD
+
+Build a real NOC dashboard.
+
+Cards:
+
+```text
+Tenants
+Sites
+Gateways
+PoPs
+Aggregators
+Active Tunnels
+Online
+Degraded
+Offline
+Traffic
+Critical Incidents
+```
+
+Every card must link to the relevant filtered page.
+
+Example:
+
+Click:
+
+"13 Offline"
+
+→ Sites page filtered to offline sites.
+
+---
+
+# 11. LIVE NETWORK HEALTH
+
+Implement real-time updates.
+
+Use:
+
+WebSocket/SSE
+
+When telemetry changes:
+
+Backend
+→ event
+→ WebSocket
+→ frontend
+
+Dashboard should update without manual refresh.
+
+Show:
+
+* gateway status
+* tunnel status
+* WAN status
+* PoP health
+* aggregator health
+
+---
+
+# 12. TENANT MANAGEMENT
+
+Tenant list.
+
+Fields:
+
+```text
+Tenant ID
+Name
+Type
+Status
+Sites
+Gateways
+Tunnels
+Traffic
+SLA
+Health
+Created
+```
+
+Actions:
+
+* create
+* edit
+* suspend
+* activate
+* delete/archive
+* view
+* create site
+* create tenant user
+
+Tenant detail:
+
+```text
+Overview
+Sites
+Gateways
+WAN
+Tunnels
+Traffic
+Policies
+Incidents
+Reports
+Audit
+Users
+```
+
+---
+
+# 13. SITE MANAGEMENT
+
+Real CRUD.
+
+Fields:
+
+```text
+Site ID
+Tenant
+Name
+Address
+Coordinates
+PoP
+Gateway
+Subnet
+Status
+SLA
+```
+
+Health:
+
+```text
+Uptime
+Latency
+Jitter
+Packet Loss
+Traffic
+WAN Availability
+Tunnel Availability
+```
+
+Actions:
+
+* provision
+* disable
+* restart gateway
+* run diagnostics
+* view configuration
+* view telemetry
+* view logs
+
+High-impact actions require permission and confirmation.
+
+---
+
+# 14. POP MANAGEMENT
+
+PoP detail:
+
+```text
+PoP Name
+Location
+ISP
+Status
+Aggregators
+Tenants
+Sites
+Tunnels
+Bandwidth
+CPU
+Memory
+Disk
+Uptime
+```
+
+Health must come from actual monitoring data.
+
+---
+
+# 15. CORE AGGREGATOR MANAGEMENT
+
+This represents the middleman hub.
+
+Each aggregator must expose:
+
+```text
+ID
+Hostname
+PoP
+Version
+Status
+CPU
+Memory
+Disk
+Throughput
+Tunnel Count
+Tenant Count
+Site Count
+Capacity
+Uptime
+```
+
+Capacity model:
+
+```text
+current_capacity
+maximum_capacity
+utilization_percentage
+```
+
+Generate warnings:
+
+70% = warning
+80% = high
+90% = critical
+
+Make thresholds configurable.
+
+---
+
+# 16. GATEWAY MANAGEMENT
+
+Gateway lifecycle:
+
+```text
+REGISTERED
+PROVISIONING
+CONNECTING
+ONLINE
+DEGRADED
+OFFLINE
+DECOMMISSIONED
+```
+
+Gateway registration must use a secure enrollment token/certificate model.
+
+Never expose gateway secrets in frontend responses.
+
+---
+
+# 17. WAN MANAGEMENT
+
+WAN types:
+
+```text
+SATELLITE
+FIBER
+BROADBAND
+4G
+5G
+OTHER
+```
+
+Metrics:
+
+```text
+Bandwidth
+Latency
+Jitter
+Packet Loss
+Availability
+Utilization
+```
+
+Implement configurable health thresholds.
+
+---
+
+# 18. TUNNEL MANAGEMENT
+
+Support an abstraction for:
+
+```text
+WireGuard
+IPsec
+Other secure tunnel
+```
+
+Do not hard-code the entire system to one protocol.
+
+Tunnel state:
+
+```text
+PROVISIONING
+HANDSHAKING
+UP
+DEGRADED
+DOWN
+```
+
+Metrics:
+
+* handshake
+* latency
+* jitter
+* packet loss
+* bytes in/out
+* uptime
+* last state change
+
+---
+
+# 19. REAL NETWORK DIAGNOSTICS
+
+Build backend diagnostic tools.
+
+Examples:
+
+```text
+Ping
+TCP connectivity test
+DNS resolution
+Route inspection
+Tunnel health
+Gateway heartbeat
+WAN reachability
+PoP reachability
+```
+
+All diagnostics must run server-side through controlled adapters.
+
+Never allow arbitrary shell commands from the frontend.
+
+Implement an allow-listed diagnostic command system.
+
+Every diagnostic action is audited.
+
+---
+
+# 20. ROUTING
+
+Display/manage:
+
+```text
+Prefix
+Next Hop
+Interface
+PoP
+Tenant
+Gateway
+Protocol
+Metric
+Status
+```
+
+Create a RoutingProvider interface.
+
+Never assume the final production routing technology.
+
+Possible production adapters can later support:
+
+* FRRouting
+* Linux routing
+* BGP
+* static routes
+* vendor APIs
+
+---
+
+# 21. FIREWALL
+
+Real policy objects.
+
+Fields:
+
+```text
+Name
+Tenant
+Site
+Source
+Destination
+Protocol
+Ports
+Action
+Priority
+Enabled
+Version
+```
+
+Actions:
+
+ALLOW
+DENY
+
+Configuration must go through an approval/deployment pipeline where required.
+
+---
+
+# 22. NAT
+
+Support:
+
+* source NAT
+* destination NAT
+* port forwarding
+
+All changes:
+
+Draft
+→ Review
+→ Approve
+→ Deploy
+→ Verify
+→ Audit
+
+---
+
+# 23. POLICY ENGINE
+
+Create reusable profiles.
+
+Example:
+
+```text
+Banking Standard
+Government Standard
+Enterprise Standard
+University Standard
+Satellite Backup
+High Security
+```
+
+Policy versioning is mandatory.
+
+Never overwrite an active policy without retaining history.
+
+---
+
+# 24. CONFIGURATION MANAGEMENT
+
+This is critical.
+
+Implement:
+
+```text
+Desired Configuration
+        ↓
+Configuration Diff
+        ↓
+Approval
+        ↓
+Deployment
+        ↓
+Validation
+        ↓
+Applied
+```
+
+Store:
+
+```text
+desired_config
+previous_config
+applied_config
+version
+deployment_id
+```
+
+If deployment fails:
+
+```text
+FAILED
+```
+
+Provide rollback where supported.
+
+---
+
+# 25. TELEMETRY INGESTION
+
+Implement actual ingestion APIs.
+
+Example:
+
+```http
+POST /telemetry/v1/gateway/heartbeat
+POST /telemetry/v1/gateway/metrics
+POST /telemetry/v1/tunnel/metrics
+POST /telemetry/v1/wan/metrics
+POST /telemetry/v1/pop/metrics
+POST /telemetry/v1/aggregator/metrics
+```
+
+Validate payloads.
+
+Authenticate telemetry sources.
+
+Reject malformed telemetry.
+
+Store appropriate time-series data in a scalable metrics system.
+
+Do not put millions of raw metric points into ordinary relational tables without a retention strategy.
+
+---
+
+# 26. PROMETHEUS
+
+Expose application metrics:
+
+```text
+API request latency
+API errors
+database latency
+queue depth
+automation executions
+AI latency
+AI errors
+telemetry ingestion rate
+WebSocket connections
+```
+
+Provide `/metrics`.
+
+Create Prometheus configuration.
+
+Create alert rules.
+
+---
+
+# 27. ALERT ENGINE
+
+Rules must be database-configurable.
+
+Examples:
+
+```text
+packet_loss > 5%
+latency > 200ms
+gateway offline > 30s
+tunnel down
+CPU > 80%
+memory > 85%
+PoP utilization > 80%
+aggregator utilization > 80%
+WAN unavailable
+```
+
+Alert lifecycle:
+
+```text
+OPEN
+ACKNOWLEDGED
+SUPPRESSED
+RESOLVED
+CLOSED
+```
+
+---
+
+# 28. INCIDENT ENGINE
+
+Group related alerts.
+
+Example:
+
+```text
+17 sites degraded
+↓
+same PoP
+↓
+same upstream path
+↓
+one incident
+```
+
+Incident timeline:
+
+```text
+Detection
+Alert
+Diagnostics
+AI analysis
+Operator action
+Automation
+Recovery
+Resolution
+```
+
+---
+
+# 29. AUTOMATION ENGINE
+
+Build a real workflow engine.
+
+Rule:
+
+```text
+IF condition
+AND condition
+THEN action
+```
+
+Actions:
+
+```text
+create alert
+create incident
+run diagnostic
+change route
+failover WAN
+send notification
+run webhook
+generate report
+request approval
+```
+
+High-risk network actions require approval unless explicitly configured as auto-remediation.
+
+---
+
+# 30. FAILOVER
+
+Example:
+
+```text
+Primary WAN = Fiber
+Backup WAN = Satellite
+
+IF:
+packet_loss > 5%
+for > 30 seconds
+
+THEN:
+
+verify backup
+↓
+switch traffic
+↓
+verify connectivity
+↓
+record failover
+↓
+notify NOC
+↓
+create incident
+```
+
+Do not merely change a status field.
+
+Call the appropriate networking adapter.
+
+Simulator adapter should actually simulate the state transition.
+
+---
+
+# 31. AI SERVICE
+
+Python FastAPI.
+
+Architecture:
+
+```text
+AI API
+ ↓
+Agent Orchestrator
+ ↓
+Tool Registry
+ ↓
+Intellilink APIs
+ ↓
+Live Data
+```
+
+AI tools:
+
+```text
+getTenant
+getSite
+getGateway
+getPoP
+getAggregator
+getTunnel
+getWAN
+getMetrics
+getLogs
+getAlerts
+getIncidents
+getRoutes
+getPolicies
+runDiagnostic
+getConfiguration
+compareConfiguration
+proposeChange
+createIncident
+generateReport
+```
+
+AI must use tools to retrieve actual information.
+
+It must NOT hallucinate network state.
+
+---
+
+# 32. AI ROOT CAUSE ANALYSIS
+
+User:
+
+"Why is Site 102 degraded?"
+
+AI must:
+
+1. retrieve site
+2. retrieve gateway
+3. retrieve WANs
+4. retrieve tunnel
+5. retrieve PoP
+6. retrieve recent metrics
+7. retrieve alerts
+8. retrieve incidents
+9. compare historical baseline
+10. generate evidence-backed analysis
+
+Output:
+
+```text
+Summary
+Evidence
+Affected components
+Likely cause
+Confidence
+Recommended action
+Risk
+```
+
+Every evidence item must reference an actual record/metric/event.
+
+---
+
+# 33. AI ANOMALY DETECTION
+
+Detect:
+
+* bandwidth anomalies
+* latency anomalies
+* packet-loss anomalies
+* repeated tunnel resets
+* unusual failovers
+* gateway CPU anomalies
+* PoP capacity anomalies
+
+Start with statistical baseline detection.
+
+Do not require an expensive ML model for every metric.
+
+Later support ML models.
+
+---
+
+# 34. AI INCIDENT CORRELATION
+
+AI can correlate:
+
+```text
+Site alerts
++
+PoP alerts
++
+WAN metrics
++
+Tunnel events
++
+routing events
+```
+
+into an incident summary.
+
+The AI must distinguish:
+
+```text
+FACT
+INFERENCE
+RECOMMENDATION
+```
+
+Never present an inference as confirmed fact.
+
+---
+
+# 35. AI CONFIGURATION ASSISTANT
+
+User:
+
+"Create satellite backup policy for all banking sites."
+
+AI:
+
+1. finds banking tenants
+2. lists affected sites
+3. reads current WAN configuration
+4. proposes configuration
+5. generates diff
+6. explains impact
+7. asks for approval
+
+Never automatically deploy high-impact changes.
+
+---
+
+# 36. AI CHAT
+
+Global assistant.
+
+Examples:
+
+"Show all degraded sites."
+
+"Which PoP has the most incidents today?"
+
+"Why is Mumbai site 23 slow?"
+
+"Show me all gateways with repeated tunnel resets."
+
+"Generate today's NOC report."
+
+"Which customers were affected by the Delhi PoP incident?"
+
+All answers must use live backend tools.
+
+---
+
+# 37. AI SECURITY
+
+Prevent:
+
+* prompt injection
+* tool injection
+* unauthorized tool access
+* tenant data leakage
+* privilege escalation
+
+The AI inherits the authenticated user's authorization.
+
+If a tenant user asks:
+
+"Show me other customers."
+
+The tool layer must reject the request.
+
+The LLM must never bypass authorization.
+
+---
+
+# 38. NETWORK MAP
+
+Use React Flow.
+
+Objects:
+
+```text
+Internet
+ISP
+PoP
+Aggregator
+Tenant
+Site
+Gateway
+WAN
+Tunnel
+```
+
+Edges represent actual relationships from database/configuration.
+
+Status colors:
+
+Healthy
+Degraded
+Down
+
+Clicking an object opens real detail.
+
+---
+
+# 39. CUSTOMER PORTAL
+
+Tenant users get a dedicated view.
+
+Dashboard:
+
+```text
+Sites
+Online
+Degraded
+Offline
+WAN Health
+Tunnel Health
+Availability
+Traffic
+Incidents
+```
+
+Tenant must only see their own resources.
+
+Provide:
+
+```text
+customer.example.com
+```
+
+or tenant-specific routing/subdomain architecture.
+
+---
+
+# 40. NOTIFICATIONS
+
+Support:
+
+* email
+* webhook
+* in-app
+
+Architecture must support future:
+
+* SMS
+* Slack
+* Teams
+
+Notifications should be configurable by severity.
+
+---
+
+# 41. AUDIT LOG
+
+Immutable-style audit record:
+
+```text
+timestamp
+actor
+role
+tenant
+action
+resource
+resource_id
+before
+after
+result
+source_ip
+request_id
+```
+
+Audit:
+
+* login
+* logout
+* create
+* update
+* delete
+* provisioning
+* configuration
+* route change
+* firewall change
+* automation
+* AI tool call
+* AI recommendation
+* approval
+* deployment
+* rollback
+
+---
+
+# 42. REPORTING
+
+Generate real reports from database/metrics.
+
+Reports:
+
+* Daily NOC
+* Weekly NOC
+* Tenant SLA
+* Site uptime
+* WAN performance
+* Incident
+* PoP capacity
+* Aggregator capacity
+* Audit
+* Configuration changes
+
+Export:
+
+CSV
+PDF
+
+---
+
+# 43. SYSTEM HEALTH
+
+Monitor:
+
+```text
+API
+PostgreSQL
+Redis
+AI service
+Telemetry
+Prometheus
+Logging
+Queue
+WebSocket
+PoP adapters
+Gateway adapters
+```
+
+Create dependency health checks.
+
+Expose:
+
+```text
+GET /health
+GET /ready
+GET /live
+GET /metrics
+```
+
+---
+
+# 44. CONFIGURATION / ENVIRONMENT
+
+Provide:
+
+```text
+.env.example
+docker-compose.yml
+docker-compose.production.yml
+```
+
+Never commit secrets.
+
+Document:
+
+```text
+DATABASE_URL
+REDIS_URL
+JWT_SECRET
+AI_PROVIDER
+AI_API_KEY
+PROMETHEUS_URL
+LOKI_URL
+TELEMETRY_SECRET
+```
+
+---
+
+# 45. DOCKER
+
+Every service must have Docker support.
+
+Services:
+
+```text
+web
+api
+ai-service
+simulator
+postgres
+redis
+prometheus
+grafana
+loki
+```
+
+Provide one command:
+
+```bash
+docker compose up -d
+```
+
+for development.
+
+---
+
+# 46. DATABASE MIGRATIONS
+
+Never rely on manually creating tables.
+
+Provide:
+
+```bash
+npm run db:migrate
+npm run db:seed
+npm run db:reset
+```
+
+Seed data must be clearly marked as DEMO.
+
+---
+
+# 47. TESTING
+
+This is mandatory.
+
+## Unit tests
+
+Services
+business rules
+policy engine
+alert engine
+tenant authorization
+automation
+
+## Integration tests
+
+API + database
+API + Redis
+telemetry ingestion
+AI tools
+automation
+
+## E2E
+
+Login
+Create tenant
+Create site
+Register gateway
+Create WAN
+Create tunnel
+Receive telemetry
+Generate alert
+Create incident
+AI investigation
+Failover
+Audit
+
+## Security tests
+
+Cross-tenant access
+RBAC bypass
+invalid JWT
+expired session
+unauthorized tool calls
+injection attempts
+
+---
+
+# 48. LOAD TESTING
+
+Provide load-test scripts.
+
+Target initial development benchmark:
+
+```text
+1,000 tenants
+10,000 sites
+20,000 gateways
+30,000 WAN links
+20,000 tunnels
+```
+
+The first implementation does not need to run that scale on one small machine.
+
+But the architecture must avoid obvious single-process bottlenecks.
+
+Test:
+
+* telemetry ingestion
+* API throughput
+* WebSocket connections
+* dashboard queries
+* alert processing
+
+Document actual benchmark results.
+
+Never claim a capacity that wasn't measured.
+
+---
+
+# 49. OBSERVABILITY
+
+Every request gets:
+
+```text
+request_id
+trace_id
+```
+
+Log structured JSON.
+
+Example:
+
+```json
+{
+  "timestamp": "...",
+  "level": "INFO",
+  "service": "network-api",
+  "request_id": "...",
+  "tenant_id": "...",
+  "user_id": "...",
+  "action": "gateway.diagnostics",
+  "duration_ms": 120
+}
+```
+
+---
+
+# 50. ERROR HANDLING
+
+Every API must return consistent errors.
+
+Example:
+
+```json
+{
+  "error": {
+    "code": "GATEWAY_NOT_FOUND",
+    "message": "Gateway was not found",
+    "requestId": "..."
+  }
+}
+```
+
+Frontend must show meaningful errors.
+
+Never silently fail.
+
+---
+
+# 51. SECURITY REQUIREMENTS
+
+Implement:
+
+* TLS-ready architecture
+* secure cookies/token strategy
+* password hashing
+* RBAC
+* tenant isolation
+* rate limiting
+* input validation
+* SQL injection protection
+* XSS protection
+* CSRF protection where applicable
+* secure headers
+* secret isolation
+* audit logging
+* least privilege
+* approval workflow
+* command allowlisting
+* AI authorization enforcement
+
+Never allow arbitrary shell commands from browser/API.
+
+---
+
+# 52. NETWORK COMMAND EXECUTION
+
+Create an adapter:
+
+```text
+NetworkExecutionProvider
+```
+
+Methods:
+
+```text
+getStatus()
+getInterfaces()
+getRoutes()
+getTunnelStatus()
+getMetrics()
+runDiagnostics()
+applyConfiguration()
+rollbackConfiguration()
+failover()
+```
+
+Production implementation may use:
+
+* SSH
+* REST API
+* NETCONF
+* gNMI
+* vendor API
+* agent
+* controller API
+
+Do not hard-code a specific vendor until Intellilink provides the actual networking requirements.
+
+---
+
+# 53. PROVISIONING ENGINE
+
+Workflow:
+
+```text
+Create Tenant
+↓
+Create Site
+↓
+Assign PoP
+↓
+Allocate subnet
+↓
+Register gateway
+↓
+Generate configuration
+↓
+Deploy configuration
+↓
+Establish secure tunnel
+↓
+Validate tunnel
+↓
+Validate route
+↓
+Validate internet connectivity
+↓
+Start telemetry
+↓
+Mark site ONLINE
+```
+
+If any step fails:
+
+```text
+FAILED
+```
+
+show exact reason and allow retry/rollback.
+
+---
+
+# 54. IPAM
+
+Implement basic IP address management.
+
+Support:
+
+```text
+IP pools
+subnets
+allocations
+reservations
+overlap detection
+tenant isolation
+```
+
+Example:
+
+```text
+Tenant A
+10.10.0.0/16
+
+Tenant B
+10.20.0.0/16
+```
+
+Do not allocate overlapping subnets unless explicitly supported by a future VRF/NAT design.
+
+---
+
+# 55. SLA ENGINE
+
+Allow tenant SLA profiles.
+
+Metrics:
+
+```text
+Availability
+Latency
+Packet Loss
+Incident Duration
+Recovery Time
+```
+
+Calculate actual SLA from telemetry.
+
+Do not hard-code SLA percentages.
+
+Example:
+
+```text
+Monthly Availability
+99.97%
+
+SLA Target
+99.90%
+
+Status
+COMPLIANT
+```
+
+---
+
+# 56. CAPACITY PLANNING
+
+PoP:
+
+```text
+Current throughput
+Peak throughput
+Tunnel count
+CPU
+Memory
+Capacity
+```
+
+Aggregator:
+
+```text
+current tunnels
+maximum supported/configured tunnels
+current bandwidth
+maximum bandwidth
+```
+
+Generate:
+
+```text
+Normal
+Warning
+Capacity Risk
+```
+
+AI can summarize capacity trends using actual historical metrics.
+
+---
+
+# 57. CONFIGURATION DRIFT
+
+Store desired and actual configuration.
+
+Compare:
+
+```text
+Desired
+vs
+Actual
+```
+
+Show:
+
+```text
+DRIFT DETECTED
+
+Firewall rule changed
+Route changed
+WAN parameter changed
+```
+
+Allow:
+
+```text
+Review
+Approve
+Restore
+```
+
+All actions audited.
+
+---
+
+# 58. BACKUP / RESTORE
+
+Back up:
+
+* database
+* configuration versions
+* policies
+* tenant settings
+* audit logs where required
+
+Provide documented restore procedure.
+
+---
+
+# 59. DOCUMENTATION
+
+Generate:
+
+```text
+README
+Architecture
+Installation
+Environment variables
+Database
+API documentation
+RBAC
+Networking adapters
+Telemetry
+AI
+Automation
+Security
+Deployment
+Backup
+Disaster recovery
+Troubleshooting
+```
+
+OpenAPI documentation must be generated.
+
+---
+
+# 60. UI REQUIREMENTS
+
+Professional NOC design.
+
+Reference:
+
+Cisco Catalyst SD-WAN Manager
+Versa Concerto
+enterprise network management platforms
+
+Do NOT make it look like:
+
+* generic CRM
+* generic startup SaaS
+* fake AI dashboard
+
+Use:
+
+* dense information layouts
+* tables
+* charts
+* topology
+* drill-down
+* command drawers
+* confirmation dialogs
+* filters
+* global search
+* keyboard navigation
+* dark/light mode
+* clear status indicators
+
+Every page needs:
+
+loading
+empty
+error
+success
+permission denied
+offline
+states.
+
+---
+
+# 61. PAGE LIST
+
+Build all these pages:
+
+```text
+/login
+
+/dashboard
+
+/tenants
+/tenants/:id
+
+/sites
+/sites/:id
+
+/pops
+/pops/:id
+
+/aggregators
+/aggregators/:id
+
+/gateways
+/gateways/:id
+
+/tunnels
+/tunnels/:id
+
+/wan-links
+/wan-links/:id
+
+/network-map
+
+/routing
+/firewall
+/nat
+/policies
+
+/monitoring
+
+/alerts
+/alerts/:id
+
+/incidents
+/incidents/:id
+
+/automation
+/automation/:id
+
+/ai-assistant
+
+/reports
+/reports/:id
+
+/audit
+
+/users
+/roles
+
+/system-health
+
+/settings
+```
+
+No route should be a placeholder.
+
+---
+
+# 62. DEMO SCENARIO
+
+Create an optional simulator environment.
+
+Seed:
+
+10 tenants
+50 sites
+70 gateways
+4 PoPs
+8 aggregators
+100 tunnels
+150 WAN links
+
+Then simulate:
+
+### Scenario 1
+
+Everything healthy.
+
+### Scenario 2
+
+Bhopal fiber degradation.
+
+Packet loss:
+
+0.2%
+→
+8%
+
+System:
+
+detects
+→
+alerts
+→
+incident
+→
+AI RCA
+→
+failover
+→
+audit
+
+### Scenario 3
+
+PoP overload.
+
+CPU:
+
+45%
+→
+85%
+
+System:
+
+detects
+→
+warning
+→
+capacity analysis
+→
+AI recommendation
+
+### Scenario 4
+
+Gateway offline.
+
+System:
+
+heartbeat stops
+→
+offline detection
+→
+diagnostic
+→
+incident
+→
+notification
+
+### Scenario 5
+
+Fiber recovery.
+
+System:
+
+fiber restored
+→
+stability check
+→
+restore preferred route
+→
+verify
+→
+resolve incident.
+
+The simulator must generate these through the same event/telemetry interfaces used by production.
+
+---
+
+# 63. AI DEMO
+
+The AI must answer real simulator questions.
+
+Example:
+
+User:
+
+"Why is Bhopal Branch degraded?"
+
+AI:
+
+"Site BHO-102 is degraded because its Fiber WAN has 8.1% packet loss over the last 12 minutes. The satellite backup has 0.4% packet loss and the tunnel to IND-01 remains established. The PoP is healthy. Automatic failover moved traffic to satellite at 14:32."
+
+Every statement must be traceable to system records.
+
+---
+
+# 64. NO HALLUCINATION POLICY
+
+AI must say:
+
+"Insufficient telemetry"
+
+when evidence is missing.
+
+Never invent:
+
+* IP addresses
+* latency
+* packet loss
+* tunnel status
+* customer data
+* root causes
+* configuration
+
+---
+
+# 65. AI APPROVAL WORKFLOW
+
+For configuration changes:
+
+AI proposal
+↓
+Diff
+↓
+Risk analysis
+↓
+Human approval
+↓
+Execution
+↓
+Verification
+↓
+Audit
+
+AI cannot bypass this workflow.
+
+---
+
+# 66. REAL DEPLOYMENT
+
+Provide deployment configurations for:
+
+Development:
+
+Docker Compose
+
+Production:
+
+Kubernetes-ready services.
+
+Use:
+
+```text
+web
+api
+ai-service
+workers
+postgres
+redis
+prometheus
+loki
+```
+
+Support horizontal scaling for stateless services.
+
+---
+
+# 67. CI/CD
+
+Provide GitHub Actions.
+
+Pipeline:
+
+```text
+Install
+↓
+Lint
+↓
+Typecheck
+↓
+Unit Tests
+↓
+Integration Tests
+↓
+Security Checks
+↓
+Build
+↓
+Docker Build
+↓
+Migration Check
+↓
+E2E
+```
+
+Fail the build on test/type/security failure.
+
+---
+
+# 68. FINAL ACCEPTANCE TEST
+
+The product is NOT considered complete until the following works:
+
+1. Provider login works.
+2. Tenant login works.
+3. Tenant isolation works.
+4. Provider sees all tenants.
+5. Tenant sees only its own resources.
+6. Tenant can be created.
+7. Site can be created.
+8. Gateway can be registered.
+9. WAN can be created.
+10. Tunnel can be created.
+11. Telemetry can be ingested.
+12. Dashboard displays live telemetry.
+13. Prometheus receives metrics.
+14. Alerts are generated from actual rules.
+15. Incidents are created.
+16. Diagnostics execute through adapters.
+17. Simulator can create real state changes.
+18. Failover workflow works through simulator.
+19. Audit records are generated.
+20. AI retrieves actual data through tools.
+21. AI RCA uses actual telemetry.
+22. AI cannot access unauthorized tenant data.
+23. AI configuration proposal produces a real diff.
+24. Approval workflow works.
+25. Approved configuration goes through adapter.
+26. Configuration deployment is recorded.
+27. Rollback works where supported by adapter.
+28. Reports use actual database/metrics.
+29. CSV export works.
+30. PDF export works.
+31. Docker deployment works.
+32. Database migrations work.
+33. CI pipeline passes.
+34. Security tests pass.
+35. API documentation is available.
+36. Health endpoints work.
+37. Logs are structured.
+38. Metrics are exposed.
+39. WebSocket live updates work.
+40. Production adapter interfaces are documented.
+
+---
+
+# 69. DEFINITION OF DONE
+
+Do not say "complete" because pages were created.
+
+A feature is complete only when:
+
+Frontend
++
+API
++
+Database
++
+Validation
++
+Authorization
++
+Business logic
++
+Telemetry
++
+Error handling
++
+Audit
++
+Tests
++
+Documentation
+
+are implemented.
+
+If an infrastructure integration cannot be completed because Intellilink has not supplied the required API/protocol/device information, implement:
+
+1. a production interface,
+2. a simulator implementation,
+3. integration tests,
+4. configuration placeholders,
+5. exact documentation describing the required Intellilink integration.
+
+Do NOT fake the production integration.
+
+---
+
+# 70. FIRST DEVELOPMENT PHASE
+
+Before writing the UI:
+
+1. Create architecture.
+2. Create monorepo.
+3. Create database schema.
+4. Create migrations.
+5. Create authentication.
+6. Create RBAC.
+7. Create tenant isolation.
+8. Create API contracts.
+9. Create provider interfaces.
+10. Create simulator adapters.
+11. Create telemetry pipeline.
+
+Then build the dashboard on top of the actual APIs.
+
+---
+
+# 71. SECOND DEVELOPMENT PHASE
+
+Implement:
+
+* tenant management
+* sites
+* PoPs
+* aggregators
+* gateways
+* WAN
+* tunnels
+* IPAM
+* routing
+* firewall
+* NAT
+* policies
+* configuration management
+
+---
+
+# 72. THIRD DEVELOPMENT PHASE
+
+Implement:
+
+* Prometheus
+* OpenTelemetry
+* logs
+* WebSockets
+* alerts
+* incidents
+* automation
+* failover
+* diagnostics
+
+---
+
+# 73. FOURTH DEVELOPMENT PHASE
+
+Implement:
+
+* AI tool calling
+* RCA
+* anomaly detection
+* incident correlation
+* AI assistant
+* configuration proposal
+* AI reports
+
+---
+
+# 74. FIFTH DEVELOPMENT PHASE
+
+Implement:
+
+* production network adapters
+* security hardening
+* load testing
+* CI/CD
+* Docker production
+* Kubernetes readiness
+* disaster recovery
+* final documentation
+
+---
+
+# 75. CRITICAL ARCHITECTURE DECISION
+
+Do not implement packet forwarding inside Node.js.
+
+Use:
+
+CONTROL PLANE:
+
+Next.js
++
+NestJS
++
+PostgreSQL
++
+Redis
++
+Python AI
+
+DATA PLANE:
+
+Linux networking
++
+WireGuard/IPsec
++
+FRRouting/Linux routing
++
+nftables
++
+Intellilink Gateway
++
+PoP Aggregator
+
+The control plane communicates with the data plane through secure adapters/controllers.
+
+---
+
+# 76. EXPECTED FINAL PRODUCT
+
+The final product should feel like:
+
+Cisco Catalyst SD-WAN Manager
++
+Versa Concerto
++
+Turnium multi-tenant architecture
+
+but specifically adapted to:
+
+Intellilink
++
+Satellite connectivity
++
+Enterprise Gateway
++
+ISP Governance PoP
++
+Multi-tenant aggregation
++
+Routing
++
+NAT
++
+Policy
++
+Observability
++
+AI NOC
++
+Automation.
+
+It must be possible to replace simulator adapters with real Intellilink infrastructure without rewriting the dashboard.
+
+DO NOT deliver a fake dashboard.
+
+DELIVER a real software platform with a real control plane, real APIs, real persistence, real telemetry, real automation, real AI tooling, real security boundaries and production-ready infrastructure integration points.
+
+Before declaring completion, run the complete acceptance test suite and report:
+
+* what works
+* what was tested
+* test results
+* performance results
+* security results
+* remaining external dependencies
+* exact information required from Intellilink for production networking integration.
+
+                 INTELLILINK
+                     │
+            ┌────────▼─────────┐
+            │  CONTROL PLANE   │
+            │                  │
+            │ Multi-Tenancy    │
+            │ Provisioning     │
+            │ Monitoring       │
+            │ Automation       │
+            │ AI NOC           │
+            │ Governance       │
+            └────────┬─────────┘
+                     │
+              ┌──────┴──────┐
+              │             │
+           PoP #1        PoP #2
+              │             │
+         Aggregators    Aggregators
+              │             │
+       ┌──────┼──────┐      │
+       │      │      │      │
+      Bank   Mine   Govt   Enterprise
+       │      │      │      │
+       ▼      ▼      ▼      ▼
+    Gateway Gateway Gateway Gateway
+       │      │      │
+    Satellite/Fiber/4G/5G
+
+
+
+
+
+
+                        CUSTOMERS
+        ┌──────────────┼──────────────┐
+        │              │              │
+     Customer A     Customer B     Customer C
+        │              │              │
+     Gateway         Gateway         Gateway
+        │              │              │
+        └──────────────┼──────────────┘
+                       │
+                 Encrypted Tunnel
+                       │
+                       ▼
+             ┌─────────────────────┐
+             │   INTELLILINK PoP    │
+             │                     │
+             │  Aggregator / Hub   │
+             │  Routing            │
+             │  Firewall/NAT       │
+             │  Traffic Control    │
+             └──────────┬──────────┘
+                        │
+                        ▼
+                  ISP CORE NETWORK
+                        │
+                        ▼
+                    INTERNET
+
+
+
+
+
+
+
+                    CUSTOMERS
+        ┌──────────────┼──────────────┐
+        │              │              │
+     Customer A     Customer B     Customer C
+        │              │              │
+     Gateway         Gateway         Gateway
+        │              │              │
+        └──────────────┼──────────────┘
+                       │
+                 Encrypted Tunnel
+                       │
+                       ▼
+             ┌─────────────────────┐
+             │   INTELLILINK PoP    │
+             │                     │
+             │  Aggregator / Hub   │
+             │  Routing            │
+             │  Firewall/NAT       │
+             │  Traffic Control    │
+             └──────────┬──────────┘
+                        │
+                        ▼
+                  ISP CORE NETWORK
+                        │
+                        ▼
+                    INTERNET
+
+
+
+             ┌─────────────────────────────┐
+             │       INTELLILINK NOG       │
+             │                             │
+             │  Manage                     │
+             │  Monitor                    │
+             │  Automate                   │
+             │  Govern                     │
+             │  AI NOC                     │
+             └──────────────┬──────────────┘
+                            │
+                     CONTROL PLANE
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+   Gateways              PoPs              Aggregators
+        │                   │                   │
+        └───────────────────┼───────────────────┘
+                            │
+                       DATA PLANE
+                            │
+                            ▼
+                       ISP NETWORK
+                            │
+                            ▼
+                         INTERNET
+
+
+We are building a centralized multi-tenant Network Operations and Governance Platform for Intellilink. It will sit above Intellilink's existing gateways, tunnels, aggregators and PoPs and provide one control plane for customer onboarding, network configuration, monitoring, incident management, automation and AI-assisted troubleshooting. The actual network traffic continues to flow through the network infrastructure; our platform manages and observes that infrastructure.
+
+                    
+                    

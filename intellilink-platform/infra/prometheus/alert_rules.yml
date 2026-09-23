@@ -1,0 +1,29 @@
+groups:
+  - name: intellilink-api
+    rules:
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API error rate above 5%"
+      - alert: DatabaseLatency
+        expr: database_query_duration_seconds > 2
+        for: 2m
+        labels:
+          severity: warning
+      - alert: TelemetryIngestionDrop
+        expr: rate(telemetry_ingestion_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No telemetry being ingested"
