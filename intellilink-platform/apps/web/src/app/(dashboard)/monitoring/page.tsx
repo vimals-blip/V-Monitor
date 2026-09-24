@@ -140,26 +140,30 @@ export default function MonitoringPage() {
             </span>
           </div>
 
-          <div className="h-44 bg-[#0B0F17] rounded-lg border border-[#222E45] p-4 flex items-end justify-between gap-1.5">
+          <div className="h-48 bg-[#0B0F17] rounded-lg border border-[#222E45] p-4 flex items-end justify-between gap-1.5 relative overflow-hidden">
             {wanSamples.length > 0 ? (
               wanSamples.map((sample: any, idx: number) => {
                 const latency = sample.metrics?.latencyMs || 15;
                 const jitter = sample.metrics?.jitterMs || 1;
-                const heightPct = Math.min(100, Math.max(10, (latency / 120) * 100));
+                const heightPct = Math.min(100, Math.max(8, (latency / 120) * 100));
                 const isHigh = latency > 50;
 
                 return (
-                  <div key={sample.id || idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-[#162032] border border-[#222E45] px-1.5 py-0.5 rounded text-[9px] font-mono text-white whitespace-nowrap z-10 pointer-events-none">
+                  <div key={sample.id || idx} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-2 bg-[#162032] border border-[#222E45] px-2 py-0.5 rounded text-[10px] font-mono text-white whitespace-nowrap z-20 pointer-events-none shadow-xl">
                       {latency}ms (±{jitter}ms)
                     </div>
-                    <div
-                      className={`w-full rounded-t transition-all duration-300 ${
-                        isHigh ? 'bg-amber-400' : 'bg-cyan-500'
-                      }`}
-                      style={{ height: `${heightPct}%` }}
-                    />
-                    <span className="text-[8px] font-mono text-slate-500 truncate w-full text-center">
+                    <div className="w-full h-32 flex items-end bg-[#121824]/50 rounded-t overflow-hidden">
+                      <div
+                        className={`w-full rounded-t transition-all duration-300 shadow-sm ${
+                          isHigh
+                            ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                            : 'bg-gradient-to-t from-cyan-600 to-cyan-400'
+                        }`}
+                        style={{ height: `${heightPct}%`, minHeight: '6px' }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-mono text-slate-400 truncate w-full text-center">
                       {Math.round(latency)}
                     </span>
                   </div>
@@ -195,23 +199,25 @@ export default function MonitoringPage() {
             </span>
           </div>
 
-          <div className="h-44 bg-[#0B0F17] rounded-lg border border-[#222E45] p-4 flex items-end justify-between gap-1.5">
+          <div className="h-48 bg-[#0B0F17] rounded-lg border border-[#222E45] p-4 flex items-end justify-between gap-1.5 relative overflow-hidden">
             {popSamples.length > 0 ? (
               popSamples.map((sample: any, idx: number) => {
                 const mbps = sample.metrics?.currentThroughputMbps || 18000;
                 const gbps = (mbps / 1000).toFixed(1);
-                const heightPct = Math.min(100, Math.max(15, (parseFloat(gbps) / 40) * 100));
+                const heightPct = Math.min(100, Math.max(8, (parseFloat(gbps) / 40) * 100));
 
                 return (
-                  <div key={sample.id || idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-[#162032] border border-[#222E45] px-1.5 py-0.5 rounded text-[9px] font-mono text-white whitespace-nowrap z-10 pointer-events-none">
+                  <div key={sample.id || idx} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-2 bg-[#162032] border border-[#222E45] px-2 py-0.5 rounded text-[10px] font-mono text-white whitespace-nowrap z-20 pointer-events-none shadow-xl">
                       {gbps} Gbps
                     </div>
-                    <div
-                      className="w-full bg-emerald-500 rounded-t transition-all duration-300"
-                      style={{ height: `${heightPct}%` }}
-                    />
-                    <span className="text-[8px] font-mono text-slate-500 truncate w-full text-center">
+                    <div className="w-full h-32 flex items-end bg-[#121824]/50 rounded-t overflow-hidden">
+                      <div
+                        className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t transition-all duration-300 shadow-sm"
+                        style={{ height: `${heightPct}%`, minHeight: '6px' }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-mono text-slate-400 truncate w-full text-center">
                       {gbps}G
                     </span>
                   </div>

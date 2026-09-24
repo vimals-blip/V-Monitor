@@ -696,8 +696,13 @@ export default function SitesPage() {
                       {Array.from({ length: 30 }).map((_, i) => {
                         const h = 25 + Math.sin(i * 0.4) * 15 + Math.random() * 8;
                         return (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                            <div className="w-full bg-cyan-500/70 hover:bg-cyan-400 rounded-t transition-all" style={{ height: `${h}%` }} />
+                          <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
+                            <div className="w-full h-20 flex items-end bg-[#121824]/40 rounded-t overflow-hidden">
+                              <div
+                                className="w-full bg-gradient-to-t from-cyan-600/70 to-cyan-400 rounded-t transition-all"
+                                style={{ height: `${h}%`, minHeight: '4px' }}
+                              />
+                            </div>
                           </div>
                         );
                       })}
