@@ -331,7 +331,7 @@ export default function AiAssistantPage() {
                 }`}
               >
                 {/* Tool Invocations Badge */}
-                {m.toolCalls && m.toolCalls.length > 0 && (
+                {Array.isArray(m.toolCalls) && m.toolCalls.length > 0 && (
                   <div className="space-y-1.5">
                     {m.toolCalls.map((tc, tcIdx) => (
                       <div
@@ -356,7 +356,7 @@ export default function AiAssistantPage() {
                 </div>
 
                 {/* Telemetry Evidence Section */}
-                {m.evidence && m.evidence.length > 0 && (
+                {Array.isArray(m.evidence) && m.evidence.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-[#222E45] space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -399,7 +399,7 @@ export default function AiAssistantPage() {
                 )}
 
                 {/* Suggested Action Buttons */}
-                {m.suggestedActions && m.suggestedActions.length > 0 && (
+                {Array.isArray(m.suggestedActions) && m.suggestedActions.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-[#222E45] flex flex-wrap gap-1.5">
                     {m.suggestedActions.map((act, aIdx) => (
                       <button
