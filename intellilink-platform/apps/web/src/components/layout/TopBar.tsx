@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, LogOut, Bell, Radio, Sparkles, RefreshCw, CheckCircle2, ShieldAlert, Cpu, Network, Check, X } from 'lucide-react';
+import { Search, LogOut, Bell, Radio, Sparkles, RefreshCw, CheckCircle2, ShieldAlert, Cpu, Network, Check, X, Sun, Moon } from 'lucide-react';
 import { getCurrentUser, logout } from '../../lib/auth';
 import { apiClient } from '../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,10 +14,25 @@ export function TopBar() {
   const [showModal, setShowModal] = useState(false);
   const [bootstrapResult, setBootstrapResult] = useState<any>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
     setUser(getCurrentUser());
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    setIsDark(isDarkMode);
   }, []);
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
 
   const handleFullLiveBootstrap = async () => {
     setBootstrapping(true);
@@ -39,7 +54,7 @@ export function TopBar() {
 
   return (
     <>
-      <header className="h-16 bg-[#0A0E17]/90 backdrop-blur-md border-b border-[#1E293B] fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6">
+      <header className="h-16 bg-white/95 dark:bg-[#0A0E17]/90 backdrop-blur-md border-b border-slate-200 dark:border-[#1E293B] fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6 transition-colors duration-150">
         {/* Global Search with Keyboard Shortcut */}
         <div className="flex items-center gap-4 flex-1 max-w-md">
           <div className="relative w-full">
@@ -47,9 +62,9 @@ export function TopBar() {
             <input
               type="text"
               placeholder="Search gateways, sites, tunnels, IPs, or alerts..."
-              className="w-full bg-[#0F172A] border border-[#1E293B] rounded-lg pl-9 pr-14 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/80 transition-colors"
+              className="w-full bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-lg pl-9 pr-14 py-1.5 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800/80 text-slate-400 border border-slate-700/60">
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700/60">
               Ctrl K
             </span>
           </div>
@@ -57,22 +72,24 @@ export function TopBar() {
 
         <div className="flex items-center gap-3">
           {/* Production Cluster Indicator */}
-          <div className="hidden lg:flex items-center gap-2 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5 text-xs">
+          <div className="hidden lg:flex items-center gap-2 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-lg px-3 py-1.5 text-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-slate-300 font-medium">
-              Cluster: <strong className="text-white font-semibold">Production</strong> (192.168.0.0/20)
+            <span className="text-slate-600 dark:text-slate-300 font-medium">
+              Cluster: <strong className="text-slate-900 dark:text-white font-semibold">Production</strong> (192.168.0.0/20)
             </span>
           </div>
 
+          {/* Setup Wizard */}
           <button
             onClick={() => router.push('/setup')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0F172A] hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors border border-[#1E293B]"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-[#0F172A] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg text-xs font-medium transition-colors border border-slate-200 dark:border-[#1E293B]"
             title="Setup & Live Onboarding Wizard"
           >
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             <span>Setup Wizard</span>
           </button>
 
+          {/* Sync Hardware */}
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -82,27 +99,37 @@ export function TopBar() {
             <span>Sync Fleet Hardware</span>
           </button>
 
-          <div className="h-5 w-[1px] bg-[#1E293B] mx-1" />
+          <div className="h-5 w-[1px] bg-slate-200 dark:bg-[#1E293B] mx-1" />
 
-          <button className="relative p-2 rounded-lg hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 transition-colors">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+            title={isDark ? 'Switch to Light Theme' : 'Switch to Dark NOC Theme'}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </button>
+
+          {/* Notification Bell */}
+          <button className="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
             <Bell className="w-4 h-4" />
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
           </button>
 
-          <div className="h-5 w-[1px] bg-[#1E293B]" />
+          <div className="h-5 w-[1px] bg-slate-200 dark:bg-[#1E293B]" />
 
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs font-sans">
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-600/15 border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-xs font-sans">
               {user?.email ? user.email.slice(0, 2).toUpperCase() : 'AD'}
             </div>
             <div className="text-left hidden md:block">
-              <p className="text-xs font-medium text-white truncate max-w-[130px]">{user?.email || 'admin@intellilink.com'}</p>
-              <p className="text-[10px] text-slate-400">Enterprise Admin</p>
+              <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-[130px]">{user?.email || 'admin@intellilink.com'}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">Enterprise Admin</p>
             </div>
             <button
               onClick={() => logout()}
-              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors ml-1"
+              className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors ml-1"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />

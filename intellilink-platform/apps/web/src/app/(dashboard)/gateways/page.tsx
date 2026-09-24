@@ -1193,6 +1193,48 @@ export default function GatewaysPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <button
+                        onClick={() => handleGwInspectorAction('AUTO_REMEDIATE')}
+                        disabled={gwActionLoading}
+                        className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-left transition-all col-span-2 shadow-md"
+                      >
+                        <div className="flex items-center gap-2 font-bold text-xs">
+                          <Sparkles className="w-4 h-4 text-amber-300" />
+                          <span>Auto-Remediate Node (AI &amp; Playbook)</span>
+                        </div>
+                        <p className="text-[11px] text-blue-100 mt-1">
+                          Flushes interface ARP cache, verifies ICMP reachability, triggers backup circuit failover if needed, and restores ONLINE state.
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => handleGwInspectorAction('FAILOVER_SATELLITE')}
+                        disabled={gwActionLoading}
+                        className="p-3 bg-[#090D16] hover:bg-[#162032] border border-[#1E293B] hover:border-purple-500/50 rounded-xl text-left transition-all"
+                      >
+                        <div className="flex items-center gap-2 font-semibold text-white">
+                          <Wifi className="w-4 h-4 text-purple-400" />
+                          <span>Switch to Starlink Satellite</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Steers branch egress over Starlink LEO high-throughput dish.
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => handleGwInspectorAction('FLUSH_ARP')}
+                        disabled={gwActionLoading}
+                        className="p-3 bg-[#090D16] hover:bg-[#162032] border border-[#1E293B] hover:border-blue-500/50 rounded-xl text-left transition-all"
+                      >
+                        <div className="flex items-center gap-2 font-semibold text-white">
+                          <RotateCw className="w-4 h-4 text-blue-400" />
+                          <span>Flush ARP Neighbor Cache</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Clears stale ARP MAC bindings on host interface eno1.
+                        </p>
+                      </button>
+
+                      <button
                         onClick={() => handleGwInspectorAction('RESTART_SERVICE', { service: 'systemd-resolved' })}
                         disabled={gwActionLoading}
                         className="p-3 bg-[#090D16] hover:bg-[#162032] border border-[#1E293B] hover:border-blue-500/50 rounded-xl text-left transition-all"

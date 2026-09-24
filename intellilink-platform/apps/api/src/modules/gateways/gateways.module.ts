@@ -3,11 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GatewayEntity } from '../../entities/gateway.entity';
 import { ConfigurationVersionEntity } from '../../entities/configuration-version.entity';
 import { AuditLogEntity } from '../../entities/audit-log.entity';
+import { WanLinkEntity } from '../../entities/wan-link.entity';
+import { AlertEntity } from '../../entities/alert.entity';
 import { GatewaysService } from './gateways.service';
 import { GatewaysController } from './gateways.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GatewayEntity, ConfigurationVersionEntity, AuditLogEntity])],
+  imports: [TypeOrmModule.forFeature([GatewayEntity, ConfigurationVersionEntity, AuditLogEntity, WanLinkEntity, AlertEntity])],
   providers: [GatewaysService],
   controllers: [GatewaysController],
   exports: [GatewaysService],

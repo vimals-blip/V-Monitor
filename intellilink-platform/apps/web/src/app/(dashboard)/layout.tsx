@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] flex text-slate-900 dark:text-slate-100 transition-colors duration-150">
       <AppSidebar />
       <div className="flex-1 ml-64 flex flex-col min-w-0">
         <TopBar />

@@ -51,9 +51,9 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-[#0A0E17] border-r border-[#1E293B] flex flex-col h-screen fixed left-0 top-0 z-30 select-none">
+    <aside className="w-64 bg-white dark:bg-[#0A0E17] border-r border-slate-200 dark:border-[#1E293B] flex flex-col h-screen fixed left-0 top-0 z-30 select-none transition-colors duration-150">
       {/* Brand Header */}
-      <div className="h-16 flex items-center gap-3 px-5 border-b border-[#1E293B]">
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-200 dark:border-[#1E293B]">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-900/30">
           <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -61,10 +61,10 @@ export function AppSidebar() {
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-bold text-white tracking-tight">V-Monitor</h1>
-            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">PRO</span>
+            <h1 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">V-Monitor</h1>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">PRO</span>
           </div>
-          <p className="text-[10px] text-slate-400 font-medium">Enterprise SD-WAN &amp; SASE</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Enterprise SD-WAN &amp; SASE</p>
         </div>
       </div>
 
@@ -72,7 +72,7 @@ export function AppSidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navItems.map((section, idx) => (
           <div key={idx}>
-            <div className="px-3 text-[10px] font-semibold text-slate-400/80 uppercase tracking-widest mb-1.5">
+            <div className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
               {section.group}
             </div>
             <div className="space-y-0.5">
@@ -85,11 +85,11 @@ export function AppSidebar() {
                     href={item.href}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
                       active
-                        ? 'bg-blue-600/15 text-blue-400 font-semibold border-l-2 border-blue-500 pl-2.5 shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-medium pl-3'
+                        ? 'bg-blue-50 dark:bg-blue-600/15 text-blue-700 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-500 pl-2.5 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40 font-medium pl-3'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-200'}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -100,11 +100,11 @@ export function AppSidebar() {
       </nav>
 
       {/* Bottom Telemetry Status */}
-      <div className="p-3 border-t border-[#1E293B]">
-        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#0F172A] border border-[#1E293B] text-xs">
+      <div className="p-3 border-t border-slate-200 dark:border-[#1E293B]">
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] text-xs">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-[11px] font-medium text-slate-300">Cluster: Active</span>
+            <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300">Cluster: Active</span>
           </div>
           <span className="text-[10px] font-mono text-slate-500">v2.4.0</span>
         </div>
