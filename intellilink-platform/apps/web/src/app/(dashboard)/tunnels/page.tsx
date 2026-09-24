@@ -5,7 +5,7 @@ import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import {
   Search, RefreshCw, Plus, Shuffle, Key, Activity,
-  Trash2, X, Check, ShieldCheck, ArrowRightLeft, Lock
+  Trash2, X, Check, ShieldCheck, ArrowRightLeft, Lock, Terminal, Copy, CheckCircle2
 } from 'lucide-react';
 
 export default function EncryptedTunnelsPage() {
@@ -292,60 +292,117 @@ export default function EncryptedTunnelsPage() {
       </div>
 
       {/* Handshake Verification Modal */}
+      {/* WireGuard Cryptographic Session State Inspector */}
       {handshakeModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
-                  <Lock className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-[#1E293B] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-0">
+            {/* Header */}
+            <div className="bg-[#0F172A] px-6 py-4 border-b border-[#1E293B] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20">
+                  <Lock className="w-5 h-5" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  WireGuard Cryptographic Session State
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-white tracking-tight">WireGuard Cryptographic Peer Inspection</h2>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/60 font-medium">
+                      {handshakeModal.result?.status || 'ONLINE'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                    Peer: {handshakeModal.tunnel?.remoteEndpoint || handshakeModal.result?.activeEndpoint} • Device: wg0
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setHandshakeModal(null)} className="text-slate-400 hover:text-white p-1">
+              <button
+                onClick={() => setHandshakeModal(null)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1E293B] transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-3 font-mono text-xs">
+            <div className="p-6 space-y-4 font-mono text-xs">
               {handshakeModal.loading ? (
-                <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-slate-300 font-semibold">Querying kernel WireGuard state...</p>
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                  <p className="text-slate-300 font-semibold font-sans">Querying Linux kernel WireGuard peer state...</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">LATEST HANDSHAKE</span>
-                      <span className="text-emerald-400 font-bold">{handshakeModal.result?.handshakeAge}</span>
+                <div className="space-y-4">
+                  {/* Cryptographic Parameters Grid */}
+                  <div className="bg-[#0F172A] p-4 rounded-xl border border-[#1E293B] space-y-3">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400 uppercase tracking-wider">Session Crypto Parameters</span>
+                      <span className="text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-800/60 font-medium">
+                        RFC 7539 / RFC 7748
+                      </span>
                     </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">RX / TX ENCRYPTED</span>
-                      <span className="text-cyan-400 font-bold">{handshakeModal.result?.bytesReceived} / {handshakeModal.result?.bytesTransmitted}</span>
-                    </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45] col-span-2">
-                      <span className="text-slate-400 block text-[10px]">ACTIVE CIPHER SUITE</span>
-                      <span className="text-purple-400 font-bold">{handshakeModal.result?.cipherSuite}</span>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-[#090D16] p-3 rounded-lg border border-[#1E293B]">
+                        <span className="text-slate-500 block text-[10px]">CIPHER SUITE</span>
+                        <span className="text-purple-400 font-bold mt-0.5 block">{handshakeModal.result?.cipherSuite}</span>
+                      </div>
+                      <div className="bg-[#090D16] p-3 rounded-lg border border-[#1E293B]">
+                        <span className="text-slate-500 block text-[10px]">LATEST HANDSHAKE</span>
+                        <span className="text-emerald-400 font-bold mt-0.5 block">{handshakeModal.result?.handshakeAge}</span>
+                      </div>
+                      <div className="bg-[#090D16] p-3 rounded-lg border border-[#1E293B]">
+                        <span className="text-slate-500 block text-[10px]">ENCRYPTED RX (INGRESS)</span>
+                        <span className="text-blue-400 font-bold mt-0.5 block">{handshakeModal.result?.bytesReceived}</span>
+                      </div>
+                      <div className="bg-[#090D16] p-3 rounded-lg border border-[#1E293B]">
+                        <span className="text-slate-500 block text-[10px]">ENCRYPTED TX (EGRESS)</span>
+                        <span className="text-emerald-400 font-bold mt-0.5 block">{handshakeModal.result?.bytesTransmitted}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-3 bg-[#05080E] rounded border border-[#222E45] text-slate-400 text-[11px]">
-                    ✓ Peer endpoint verified at {handshakeModal.result?.activeEndpoint}<br />
-                    ✓ Persistent keepalive: {handshakeModal.result?.keepaliveInterval}<br />
-                    ✓ State: {handshakeModal.result?.tunnelState}
+
+                  {/* Peer Verification Details */}
+                  <div className="bg-[#0F172A] p-4 rounded-xl border border-[#1E293B] space-y-2 text-[11px] text-slate-300">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-[#1E293B]">
+                      <span className="text-slate-500">Peer Endpoint:</span>
+                      <span className="text-white font-semibold">{handshakeModal.result?.activeEndpoint}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-[#1E293B]">
+                      <span className="text-slate-500">Persistent Keepalive:</span>
+                      <span className="text-emerald-400 font-semibold">{handshakeModal.result?.keepaliveInterval}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-[#1E293B]">
+                      <span className="text-slate-500">FSM State:</span>
+                      <span className="text-emerald-400 font-semibold">{handshakeModal.result?.tunnelState}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Interface MTU Ceiling:</span>
+                      <span className="text-slate-200">1420 Bytes (TCP MSS Clamped to 1380)</span>
+                    </div>
                   </div>
+
+                  {/* Raw Kernel Socket Probe Output */}
+                  {handshakeModal.result?.rawOutput && (
+                    <div className="space-y-1.5">
+                      <span className="text-slate-400 text-[10px] uppercase tracking-wider block">
+                        Kernel Socket Keepalive Probe Log:
+                      </span>
+                      <pre className="p-3 bg-[#05080E] rounded-xl border border-[#1E293B] text-emerald-400 text-[11px] overflow-x-auto leading-relaxed">
+                        {handshakeModal.result.rawOutput}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+            {/* Footer */}
+            <div className="bg-[#0F172A] px-6 py-3.5 border-t border-[#1E293B] flex items-center justify-between font-sans">
+              <span className="text-[11px] text-slate-500 font-mono">
+                Verified: {handshakeModal.result?.testedAt ? new Date(handshakeModal.result.testedAt).toLocaleTimeString() : 'Just now'}
+              </span>
               <button
                 onClick={() => setHandshakeModal(null)}
-                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
+                className="px-4 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-white text-xs font-medium transition-colors"
               >
-                Close
+                Close Inspector
               </button>
             </div>
           </div>

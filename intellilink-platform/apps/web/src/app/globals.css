@@ -7,24 +7,39 @@
 }
 
 body {
-  background-color: #0b0f17;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #090D16;
+  color: #E2E8F0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
-/* NOC styling */
+/* Polished Enterprise Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f17;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #222e45;
-  border-radius: 3px;
+  background: #1E293B;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334466;
+  background: #334155;
+}
+
+/* Subtle enterprise utility elevation */
+@layer utilities {
+  .surface-card {
+    background-color: #0F172A;
+    border: 1px solid #1E293B;
+  }
+  .surface-elevated {
+    background-color: #111A2E;
+    border: 1px solid #24324D;
+  }
 }

@@ -5,7 +5,7 @@ import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import {
   Search, RefreshCw, Plus, Shield, ShieldCheck, ShieldAlert,
-  Trash2, X, Check, ToggleLeft, ToggleRight, Filter
+  Trash2, X, Check, ToggleLeft, ToggleRight, Filter, ArrowRight, Terminal, CheckCircle2
 } from 'lucide-react';
 
 export default function FirewallRulesPage() {
@@ -283,64 +283,134 @@ export default function FirewallRulesPage() {
         </table>
       </div>
 
-      {/* Test Match Modal */}
+      {/* Enterprise Firewall Packet Simulation & ACL Studio */}
       {matchModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
-                  <ShieldCheck className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-[#1E293B] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-0">
+            {/* Header */}
+            <div className="bg-[#0F172A] px-6 py-4 border-b border-[#1E293B] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20">
+                  <ShieldCheck className="w-5 h-5" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Firewall Packet Simulation: {matchModal.rule?.name}
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-white tracking-tight">{matchModal.rule?.name}</h2>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-medium ${
+                      matchModal.rule?.action === 'ALLOW'
+                        ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/60'
+                        : 'bg-rose-950/40 text-rose-400 border border-rose-800/60'
+                    }`}>
+                      {matchModal.rule?.action}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                    ACL Priority: #{matchModal.rule?.priority} • Protocol: {matchModal.rule?.protocol?.toUpperCase()}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setMatchModal(null)} className="text-slate-400 hover:text-white p-1">
+              <button
+                onClick={() => setMatchModal(null)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1E293B] transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-3 font-mono text-xs">
+            <div className="p-6 space-y-4 font-mono text-xs">
               {matchModal.loading ? (
-                <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-slate-300 font-semibold">Simulating packet traversal...</p>
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                  <p className="text-slate-300 font-semibold font-sans">Traversing Linux netfilter rule chains...</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="p-3 bg-[#121824] rounded border border-[#222E45] space-y-1">
-                    <span className="text-slate-400 block text-[10px]">SYNTHETIC PACKET</span>
-                    <span className="text-cyan-400 font-bold">{matchModal.result?.testPacket}</span>
+                <div className="space-y-4">
+                  {/* Packet Header Simulation */}
+                  <div className="bg-[#0F172A] p-4 rounded-xl border border-[#1E293B] space-y-2">
+                    <span className="text-slate-400 text-[10px] uppercase font-sans tracking-wider block">
+                      Synthetic Packet Traversal
+                    </span>
+                    <div className="flex items-center justify-between bg-[#090D16] p-3 rounded-lg border border-[#1E293B] text-[11px]">
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">SOURCE CIDR</span>
+                        <span className="text-blue-300 font-bold">{matchModal.rule?.source || '192.168.0.0/20'}</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2">
+                        <span className="text-[9px] text-blue-400 font-mono">{matchModal.rule?.protocol?.toUpperCase()}</span>
+                        <ArrowRight className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">DESTINATION CIDR</span>
+                        <span className="text-emerald-400 font-bold">{matchModal.rule?.destination || '0.0.0.0/0'}</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2">
+                        <span className="text-[9px] text-slate-500 font-mono">PORT</span>
+                        <ArrowRight className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">TARGET PORT</span>
+                        <span className="text-white font-bold">{matchModal.rule?.ports || 'any'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">POLICY VERDICT</span>
-                      <span className={`font-bold ${matchModal.result?.evaluatedAction === 'ALLOW' ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {matchModal.result?.verdict}
+
+                  {/* Decision Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">VERDICT ACTION</span>
+                      <span className={`font-bold mt-0.5 block ${matchModal.rule?.action === 'ALLOW' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {matchModal.rule?.action === 'ALLOW' ? 'PERMIT' : 'DROP'}
                       </span>
                     </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">PRECEDENCE</span>
-                      <span className="text-purple-400 font-bold">{matchModal.result?.priorityRank}</span>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">RULE PRIORITY</span>
+                      <span className="text-purple-400 font-bold mt-0.5 block">#{matchModal.rule?.priority}</span>
+                    </div>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">CONNTRACK STATE</span>
+                      <span className="text-slate-200 font-bold mt-0.5 block">NEW, ESTAB</span>
+                    </div>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">NETFILTER CHAIN</span>
+                      <span className="text-blue-400 font-bold mt-0.5 block">FORWARD</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-[#05080E] rounded border border-[#222E45] text-slate-400 text-[11px]">
-                    ✓ State table: conntrack NEW/ESTABLISHED entry created.<br />
-                    ✓ Cryptographic inspection bypass: None (evaluated against tenant ACLs).<br />
-                    ✓ Packet matched rule: {matchModal.result?.ruleMatched}
+
+                  {/* Netfilter iptables Rule Translation */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-sans">
+                      <span>Kernel Netfilter Rule Translation:</span>
+                      <span className="text-emerald-400 font-mono font-bold">SYNTHESIZED</span>
+                    </div>
+                    <pre className="p-3.5 bg-[#05080E] rounded-xl border border-[#1E293B] text-slate-300 text-[11px] overflow-x-auto leading-relaxed">
+                      iptables -A FORWARD -s {matchModal.rule?.source || '0.0.0.0/0'} -d {matchModal.rule?.destination || '0.0.0.0/0'} -p {matchModal.rule?.protocol || 'all'} {matchModal.rule?.ports && matchModal.rule?.ports !== 'any' ? `--dport ${matchModal.rule?.ports}` : ''} -j {matchModal.rule?.action || 'ALLOW'}
+                    </pre>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
-              <button
-                onClick={() => setMatchModal(null)}
-                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
-              >
-                Close
-              </button>
+            {/* Footer */}
+            <div className="bg-[#0F172A] px-6 py-3.5 border-t border-[#1E293B] flex items-center justify-between font-sans">
+              <span className="text-[11px] text-slate-500 font-mono">
+                Rule ID: {matchModal.rule?.id}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSimulateMatch(matchModal.rule)}
+                  disabled={matchModal.loading}
+                  className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${matchModal.loading ? 'animate-spin' : ''}`} />
+                  <span>Re-Simulate</span>
+                </button>
+                <button
+                  onClick={() => setMatchModal(null)}
+                  className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors shadow-sm"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

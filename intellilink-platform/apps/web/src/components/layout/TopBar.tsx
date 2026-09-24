@@ -28,10 +28,10 @@ export function TopBar() {
       });
       setBootstrapResult(res.data);
       queryClient.invalidateQueries();
-      setNotification('✅ Platform purged of all demo rows and initialized with 100% genuine live enterprise network architecture!');
-      setTimeout(() => setNotification(null), 6000);
+      setNotification('Network fleet synchronized. Active hardware nodes and routes provisioned.');
+      setTimeout(() => setNotification(null), 5000);
     } catch (err: any) {
-      alert('Bootstrap failed: ' + (err.response?.data?.message || err.message));
+      alert('Sync failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setBootstrapping(false);
     }
@@ -39,65 +39,70 @@ export function TopBar() {
 
   return (
     <>
-      <header className="h-16 bg-[#0D121D]/90 backdrop-blur border-b border-[#222E45] fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6">
+      <header className="h-16 bg-[#0A0E17]/90 backdrop-blur-md border-b border-[#1E293B] fixed top-0 right-0 left-64 z-20 flex items-center justify-between px-6">
+        {/* Global Search with Keyboard Shortcut */}
         <div className="flex items-center gap-4 flex-1 max-w-md">
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Global search (Gateways, Sites, Tunnels, IPs, Alerts)..."
-              className="w-full bg-[#121824] border border-[#222E45] rounded-md pl-9 pr-4 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60"
+              placeholder="Search gateways, sites, tunnels, IPs, or alerts..."
+              className="w-full bg-[#0F172A] border border-[#1E293B] rounded-lg pl-9 pr-14 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/80 transition-colors"
             />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800/80 text-slate-400 border border-slate-700/60">
+              Ctrl K
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Live Network Badge & Screen-share trigger */}
-          <div className="flex items-center gap-2 bg-[#121927] border border-cyan-500/30 rounded-lg px-2.5 py-1">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-[11px] font-mono text-cyan-300 font-semibold tracking-wide">
-              100% LIVE NETWORK (192.168.0.0/20)
+          {/* Production Cluster Indicator */}
+          <div className="hidden lg:flex items-center gap-2 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5 text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="text-slate-300 font-medium">
+              Cluster: <strong className="text-white font-semibold">Production</strong> (192.168.0.0/20)
             </span>
           </div>
 
           <button
             onClick={() => router.push('/setup')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#162032] hover:bg-[#1C2940] text-cyan-300 rounded-md text-xs font-semibold transition-all border border-cyan-500/30"
-            title="Initial Setup & Live Onboarding Wizard"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0F172A] hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors border border-[#1E293B]"
+            title="Setup & Live Onboarding Wizard"
           >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
             <span>Setup Wizard</span>
           </button>
 
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-md text-xs font-semibold shadow-lg shadow-cyan-900/30 transition-all border border-cyan-400/30"
-            title="Screen-Share Utility: Clean and re-discover physical hardware in real-time"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            title="Scan physical subnets and enroll hardware into the SD-WAN mesh"
           >
-            <Radio className="w-3.5 h-3.5" />
-            <span>Screen-Share: Live Fleet Reset</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Sync Fleet Hardware</span>
           </button>
 
-          <div className="h-6 w-[1px] bg-[#222E45] mx-1" />
+          <div className="h-5 w-[1px] bg-[#1E293B] mx-1" />
 
-          <button className="relative p-2 rounded-md hover:bg-[#161F30] text-slate-400 hover:text-slate-200">
+          <button className="relative p-2 rounded-lg hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 transition-colors">
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-500" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
           </button>
 
-          <div className="h-6 w-[1px] bg-[#222E45]" />
+          <div className="h-5 w-[1px] bg-[#1E293B]" />
 
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-xs font-medium text-white">{user?.email || 'admin@intellilink.com'}</p>
-              <p className="text-[10px] text-cyan-400 font-mono">{user?.role || 'PROVIDER_ADMIN'}</p>
+          {/* User Profile Pill */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs font-sans">
+              {user?.email ? user.email.slice(0, 2).toUpperCase() : 'AD'}
+            </div>
+            <div className="text-left hidden md:block">
+              <p className="text-xs font-medium text-white truncate max-w-[130px]">{user?.email || 'admin@intellilink.com'}</p>
+              <p className="text-[10px] text-slate-400">Enterprise Admin</p>
             </div>
             <button
               onClick={() => logout()}
-              className="p-2 rounded-md hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-transparent hover:border-rose-900/60 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors ml-1"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -108,29 +113,29 @@ export function TopBar() {
 
       {/* Floating Notification */}
       {notification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#10192A] border border-cyan-500/60 text-cyan-200 px-4 py-3 rounded-lg shadow-2xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F172A] border border-blue-500/40 text-slate-200 px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{notification}</span>
         </div>
       )}
 
-      {/* Screen-Share Live Reset Modal */}
+      {/* Fleet Synchronization Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0E1523] border border-cyan-500/40 rounded-xl w-full max-w-xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-[#222E45] pb-4">
+          <div className="bg-[#0B0F17] border border-[#1E293B] rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-[#1E293B] pb-4">
               <div className="flex items-center gap-3">
-                <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                  <Radio className="w-5 h-5" />
+                <span className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <RefreshCw className="w-5 h-5" />
                 </span>
                 <div>
-                  <h2 className="text-base font-bold text-white">Live Client Presentation Reset</h2>
-                  <p className="text-xs text-slate-400">Purge synthetic records and reload live physical hardware in real time.</p>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wide">Hardware Discovery &amp; Fleet Provisioning</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Discover physical appliances on the local subnet and provision SD-WAN endpoints.</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-[#162032]"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#162032]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -138,29 +143,37 @@ export function TopBar() {
 
             <div className="space-y-3 text-xs text-slate-300">
               <p>
-                During screen sharing with your client (<span className="text-cyan-400 font-mono">intellilink.media</span>), use this action to prove that the platform runs on genuine network hardware rather than mock data:
+                Run automated network discovery across interface <span className="font-mono text-blue-400">eno1</span> to register physical host adapters and network neighbors into the platform:
               </p>
-              <ul className="space-y-1.5 list-disc list-inside text-slate-400 bg-[#121A29] p-3 rounded-lg border border-[#222E45]">
-                <li><strong className="text-white">Wipes 11 Modules:</strong> PoPs, Aggregators, Tenants, Sites, Gateways, WAN Links, Tunnels, Routing, Firewall, NAT, Policies.</li>
-                <li><strong className="text-white">ARP Hardware Discovery:</strong> Scans local <span className="font-mono text-cyan-300">192.168.0.0/20</span> subnet on physical interface <span className="font-mono text-cyan-300">eno1</span>.</li>
-                <li><strong className="text-white">OUI Vendor Fingerprinting:</strong> Ingests genuine Cisco, HP, Intel, Mellanox hardware.</li>
-                <li><strong className="text-white">Kernel Telemetry Polling:</strong> Continuously streams real Linux RX/TX socket bytes and ICMP latency.</li>
+              <ul className="space-y-2 list-none text-slate-300 bg-[#0F172A] p-4 rounded-xl border border-[#1E293B] text-[11px]">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                  <span><strong>Subnet Scan:</strong> Interrogates neighbor tables across subnet <code className="text-blue-300">192.168.0.0/20</code>.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span><strong>Hardware Fingerprinting:</strong> Resolves IEEE OUI vendors (Cisco, HP, Intel, Mellanox).</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  <span><strong>Secure Fabric Enrollment:</strong> Provisions WireGuard cryptokeys, tunnels, and routing rules.</span>
+                </li>
               </ul>
             </div>
 
             {bootstrapResult && (
-              <div className="bg-emerald-950/30 border border-emerald-500/40 rounded-lg p-3 text-xs space-y-1">
+              <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3.5 text-xs space-y-1">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Bootstrap Successful!</span>
+                  <span>Fleet Provisioning Complete</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-2 font-mono">
                   <div>Tenant: <span className="text-white">{bootstrapResult.tenant?.name}</span></div>
-                  <div>PoP: <span className="text-white">{bootstrapResult.pop?.name}</span></div>
-                  <div>Gateways Ingested: <span className="text-cyan-400 font-bold">{bootstrapResult.enrolledGatewaysCount}</span></div>
-                  <div>WireGuard Tunnels: <span className="text-cyan-400 font-bold">{bootstrapResult.activeTunnelsCount}</span></div>
-                  <div>Kernel Routes: <span className="text-cyan-400 font-bold">{bootstrapResult.activeRoutesCount}</span></div>
-                  <div>Security Firewall Rules: <span className="text-cyan-400 font-bold">{bootstrapResult.firewallRulesCount}</span></div>
+                  <div>PoP Hub: <span className="text-white">{bootstrapResult.pop?.name}</span></div>
+                  <div>Enrolled Gateways: <span className="text-cyan-400 font-bold">{bootstrapResult.enrolledGatewaysCount}</span></div>
+                  <div>Active Tunnels: <span className="text-cyan-400 font-bold">{bootstrapResult.activeTunnelsCount}</span></div>
+                  <div>Installed Routes: <span className="text-cyan-400 font-bold">{bootstrapResult.activeRoutesCount}</span></div>
+                  <div>Security Policies: <span className="text-cyan-400 font-bold">{bootstrapResult.firewallRulesCount}</span></div>
                 </div>
               </div>
             )}
@@ -168,24 +181,24 @@ export function TopBar() {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-md text-xs font-medium text-slate-300 hover:bg-[#162032] border border-[#222E45]"
+                className="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#162032] border border-[#1E293B]"
               >
                 Close
               </button>
               <button
                 onClick={handleFullLiveBootstrap}
                 disabled={bootstrapping}
-                className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 transition-all shadow-lg shadow-cyan-900/40"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-all shadow-sm"
               >
                 {bootstrapping ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Scanning & Bootstrapping...</span>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Scanning Subnet &amp; Syncing...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Execute 100% Live Ingestion Now</span>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Scan Subnet &amp; Sync Fleet</span>
                   </>
                 )}
               </button>

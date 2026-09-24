@@ -181,17 +181,17 @@ export default function LiveDiagnosticsPage() {
               <button
                 onClick={() => runMutation.mutate()}
                 disabled={runMutation.isPending}
-                className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:opacity-95 transition-opacity disabled:opacity-50"
+                className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-sm"
               >
                 {runMutation.isPending ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                    Executing Live Probe...
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    Executing Diagnostics...
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 fill-black" />
-                    Execute Live Probe
+                    <Play className="w-4 h-4 fill-white" />
+                    Execute Diagnostic Probe
                   </>
                 )}
               </button>

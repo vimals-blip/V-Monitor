@@ -51,21 +51,28 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-[#0D121D] border-r border-[#222E45] flex flex-col h-screen fixed left-0 top-0 z-30 select-none">
-      <div className="h-16 flex items-center gap-3 px-5 border-b border-[#222E45]">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-black text-sm">
-          IL
+    <aside className="w-64 bg-[#0A0E17] border-r border-[#1E293B] flex flex-col h-screen fixed left-0 top-0 z-30 select-none">
+      {/* Brand Header */}
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-[#1E293B]">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-900/30">
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </div>
         <div>
-          <h1 className="text-sm font-bold text-white tracking-wide">INTELLILINK</h1>
-          <p className="text-[10px] text-cyan-400 uppercase font-mono tracking-widest">NOG Platform</p>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-sm font-bold text-white tracking-tight">V-Monitor</h1>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">PRO</span>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium">Enterprise SD-WAN &amp; SASE</p>
         </div>
       </div>
 
+      {/* Navigation Sections */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navItems.map((section, idx) => (
           <div key={idx}>
-            <div className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            <div className="px-3 text-[10px] font-semibold text-slate-400/80 uppercase tracking-widest mb-1.5">
               {section.group}
             </div>
             <div className="space-y-0.5">
@@ -76,13 +83,13 @@ export function AppSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
                       active
-                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#141B2A]'
+                        ? 'bg-blue-600/15 text-blue-400 font-semibold border-l-2 border-blue-500 pl-2.5 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-medium pl-3'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-cyan-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -92,10 +99,14 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-[#222E45]">
-        <div className="flex items-center gap-2 px-3 py-2 rounded bg-[#121824] border border-[#222E45]">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-mono text-emerald-400">TELEMETRY FABRIC: ONLINE</span>
+      {/* Bottom Telemetry Status */}
+      <div className="p-3 border-t border-[#1E293B]">
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#0F172A] border border-[#1E293B] text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-[11px] font-medium text-slate-300">Cluster: Active</span>
+          </div>
+          <span className="text-[10px] font-mono text-slate-500">v2.4.0</span>
         </div>
       </div>
     </aside>

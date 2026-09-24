@@ -890,13 +890,13 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
 
     // 10. Provision Real Production Firewall Rules
     const realFirewallRules = [
-      { name: 'Allow WireGuard UDP 51820 Overlay Mesh', protocol: 'udp', ports: '51820', action: 'ALLOW', priority: 10 },
-      { name: 'Allow Corporate HTTPS Port 443 Egress', protocol: 'tcp', ports: '443', action: 'ALLOW', priority: 20 },
-      { name: 'Allow Admin SSH Port 22 Ingress', protocol: 'tcp', ports: '22', action: 'ALLOW', priority: 30 },
-      { name: 'Allow ICMP Echo Diagnostic Probes', protocol: 'icmp', ports: 'any', action: 'ALLOW', priority: 40 },
-      { name: 'Block Insecure Legacy Telnet', protocol: 'tcp', ports: '23', action: 'DENY', priority: 900 },
-      { name: 'Block Windows SMB Lateral Propagation', protocol: 'tcp', ports: '445', action: 'DENY', priority: 910 },
-      { name: 'Default Zero-Trust Boundary Drop', protocol: 'all', ports: 'any', action: 'DENY', priority: 999 },
+      { name: 'Allow WireGuard UDP 51820 Overlay Mesh', source: '0.0.0.0/0', destination: '192.168.0.50/32', protocol: 'udp', ports: '51820', action: 'ALLOW', priority: 10 },
+      { name: 'Allow Corporate HTTPS Port 443 Egress', source: '192.168.0.0/20', destination: '0.0.0.0/0', protocol: 'tcp', ports: '443', action: 'ALLOW', priority: 20 },
+      { name: 'Allow Admin SSH Port 22 Ingress', source: '192.168.2.0/24', destination: '192.168.0.50/32', protocol: 'tcp', ports: '22', action: 'ALLOW', priority: 30 },
+      { name: 'Allow ICMP Echo Diagnostic Probes', source: '192.168.0.0/20', destination: '192.168.0.0/20', protocol: 'icmp', ports: 'any', action: 'ALLOW', priority: 40 },
+      { name: 'Block Insecure Legacy Telnet', source: '192.168.0.0/20', destination: '0.0.0.0/0', protocol: 'tcp', ports: '23', action: 'DENY', priority: 900 },
+      { name: 'Block Windows SMB Lateral Propagation', source: '192.168.0.0/20', destination: '192.168.0.0/20', protocol: 'tcp', ports: '445', action: 'DENY', priority: 910 },
+      { name: 'Default Zero-Trust Boundary Drop', source: '0.0.0.0/0', destination: '0.0.0.0/0', protocol: 'all', ports: 'any', action: 'DENY', priority: 999 },
     ];
 
     for (const fw of realFirewallRules) {
@@ -907,6 +907,8 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
           organizationId: orgId,
           siteId: primarySite.id,
           name: fw.name,
+          source: fw.source,
+          destination: fw.destination,
           protocol: fw.protocol,
           ports: fw.ports,
           action: fw.action as any,

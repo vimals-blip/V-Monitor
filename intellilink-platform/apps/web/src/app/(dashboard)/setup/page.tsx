@@ -52,7 +52,7 @@ export default function InitialSetupPage() {
       setBootstrapResult(data);
       queryClient.invalidateQueries();
       setStep(4);
-      notify('🎉 Complete live enterprise network architecture provisioned with 0 dummy data!');
+      notify('Enterprise network infrastructure provisioned and synchronized successfully.');
     },
     onError: (err: any) => {
       alert('Bootstrap error: ' + (err.response?.data?.message || err.message));
@@ -104,19 +104,19 @@ export default function InitialSetupPage() {
       <div className="flex items-center justify-between border-b border-[#222E45] pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              <Sparkles className="w-5 h-5" />
+            <span className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Network className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Initial Setup & Live Network Onboarding</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">Initial Setup & Network Onboarding</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Zero-dummy onboarding: Detect physical Linux network interfaces, dynamically probe company systems across any CIDR subnet or device targets, and provision a 100% genuine carrier-grade SD-WAN & NOG architecture.
+            Network Initialization: Automatically discover interface topology, probe enterprise subnets, and configure SD-WAN overlay tunnels and routing tables.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            LINUX KERNEL INTERFACE: {primaryIface?.name || 'eno1'}
+          <span className="px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-medium flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            HOST INTERFACE: {primaryIface?.name || 'eno1'}
           </span>
         </div>
       </div>
@@ -125,16 +125,16 @@ export default function InitialSetupPage() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { num: 1, label: 'Organization & Target IPs' },
-          { num: 2, label: 'Physical Discovery & Probing' },
+          { num: 2, label: 'Interface & Subnet Discovery' },
           { num: 3, label: 'Fabric & Governance Review' },
-          { num: 4, label: 'Live Network Operational' },
+          { num: 4, label: 'Deployment Summary' },
         ].map((s) => (
           <div
             key={s.num}
             onClick={() => s.num < step && setStep(s.num)}
             className={`p-3 rounded-lg border text-left transition-all ${
               step === s.num
-                ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400'
+                ? 'bg-blue-600/10 border-blue-500/40 text-blue-400'
                 : step > s.num
                   ? 'bg-[#121927] border-[#222E45] text-slate-300 cursor-pointer hover:border-slate-600'
                   : 'bg-[#0D121D] border-[#1C263A] text-slate-600'
@@ -144,9 +144,9 @@ export default function InitialSetupPage() {
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   step > s.num
-                    ? 'bg-emerald-500 text-black'
+                    ? 'bg-emerald-500 text-white'
                     : step === s.num
-                      ? 'bg-cyan-500 text-black'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-400'
                 }`}
               >
@@ -214,23 +214,23 @@ export default function InitialSetupPage() {
             {/* Host Interface Detection Card */}
             <div className="bg-[#0D121D] border border-[#222E45] rounded-lg p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200">Auto-Detected Linux Host Environment</span>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800">REAL HARDWARE</span>
+                <span className="text-xs font-bold text-slate-200">Host Interface Environment</span>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/60">ACTIVE INTERFACE</span>
               </div>
 
               {primaryIface ? (
                 <div className="space-y-2 text-xs font-mono text-slate-300">
                   <div className="flex justify-between border-b border-[#1A2335] pb-1.5">
                     <span className="text-slate-500">Physical Interface:</span>
-                    <span className="text-cyan-400 font-bold">{primaryIface.name}</span>
+                    <span className="text-blue-400 font-semibold">{primaryIface.name}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#1A2335] pb-1.5">
                     <span className="text-slate-500">Host IPv4 Address:</span>
-                    <span className="text-white font-bold">{primaryIface.ipv4}/{primaryIface.prefixlen}</span>
+                    <span className="text-white font-semibold">{primaryIface.ipv4}/{primaryIface.prefixlen}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#1A2335] pb-1.5">
                     <span className="text-slate-500">Default Gateway:</span>
-                    <span className="text-emerald-400 font-bold">192.168.0.50 (Cisco Core)</span>
+                    <span className="text-emerald-400 font-semibold">192.168.0.50 (Cisco Core)</span>
                   </div>
                   <div className="flex justify-between border-b border-[#1A2335] pb-1.5">
                     <span className="text-slate-500">Hardware MAC:</span>
@@ -245,8 +245,8 @@ export default function InitialSetupPage() {
                 <div className="text-xs text-slate-500">Scanning host interfaces...</div>
               )}
 
-              <div className="bg-[#121A29] p-3 rounded border border-cyan-500/20 text-[11px] text-slate-400">
-                💡 The system reads directly from <span className="font-mono text-cyan-300">/sys/class/net/eno1</span> and <span className="font-mono text-cyan-300">/usr/bin/ip -j neigh</span> to ensure no simulated mock data is ever used.
+              <div className="bg-[#121A29] p-3 rounded border border-[#1E293B] text-[11px] text-slate-400">
+                Direct interface telemetry active via <span className="font-mono text-blue-300">/sys/class/net/eno1</span> and kernel neighbor table.
               </div>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function InitialSetupPage() {
             <button
               onClick={handleStartScan}
               disabled={scanMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-cyan-900/40"
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
             >
               {scanMutation.isPending ? (
                 <>
@@ -264,7 +264,7 @@ export default function InitialSetupPage() {
                 </>
               ) : (
                 <>
-                  <span>Scan Physical Subnet & Target IPs</span>
+                  <span>Scan Subnet & Target Nodes</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -273,14 +273,14 @@ export default function InitialSetupPage() {
         </div>
       )}
 
-      {/* Step 2: Physical Discovery & Probing */}
+      {/* Step 2: Interface & Subnet Discovery */}
       {step === 2 && (
         <div className="bg-[#121824] border border-[#222E45] rounded-xl p-6 space-y-6 shadow-xl">
           <div className="flex items-center justify-between border-b border-[#222E45] pb-4">
             <div>
-              <h2 className="text-base font-bold text-white">Step 2: Live Hardware Discovery & Socket Probing</h2>
+              <h2 className="text-base font-bold text-white">Step 2: Subnet Discovery & Node Probing</h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Discovered <span className="text-cyan-400 font-bold">{discoveredDevices.length} physical nodes</span> from Linux neighbor tables, ARP cache, and target list.
+                Discovered <span className="text-blue-400 font-semibold">{discoveredDevices.length} network nodes</span> from Linux neighbor tables, ARP cache, and target list.
               </p>
             </div>
             <button
@@ -294,9 +294,9 @@ export default function InitialSetupPage() {
           </div>
 
           {/* Target Nodes / Subnet Summary Card */}
-          <div className="bg-[#0D1524] border border-cyan-500/40 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-[#0D1524] border border-[#1E293B] rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="p-2 rounded-lg bg-cyan-500/20 text-cyan-400">
+              <span className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Radio className="w-5 h-5" />
               </span>
               <div>
@@ -304,12 +304,12 @@ export default function InitialSetupPage() {
                   <h3 className="text-xs font-bold text-white font-mono">
                     {targetIps.length > 0 ? `Target Nodes: ${targetIps.join(', ')}` : 'Subnet Fleet Discovery Mode'}
                   </h3>
-                  <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded font-mono font-bold">
-                    {discoveredDevices.length} PHYSICAL NODES PROBED
+                  <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded font-mono font-medium">
+                    {discoveredDevices.length} NODES DISCOVERED
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  All identified active systems, gateways, and target nodes will be enrolled into the enterprise fleet and continuously polled.
+                  All active endpoints and gateways will be registered into the monitoring fleet.
                 </p>
               </div>
             </div>
@@ -332,15 +332,15 @@ export default function InitialSetupPage() {
                 {discoveredDevices.map((dev: any, idx: number) => {
                   const isTarget = targetIps.includes(dev.ip);
                   return (
-                    <tr key={idx} className={`hover:bg-[#162032] ${isTarget ? 'bg-cyan-950/20 border-l-4 border-cyan-400' : ''}`}>
+                    <tr key={idx} className={`hover:bg-[#162032] ${isTarget ? 'bg-blue-950/20 border-l-4 border-blue-400' : ''}`}>
                       <td className="py-2.5 px-4 font-bold text-white flex items-center gap-2">
                         {dev.isDefaultGateway && <span className="text-emerald-400 font-bold" title="Core Gateway">★</span>}
-                        {isTarget && <span className="text-cyan-400 font-bold" title="Target Node">🎯</span>}
+                        {isTarget && <span className="text-blue-400 font-bold" title="Target Node">🎯</span>}
                         <span>{dev.ip}</span>
                       </td>
                       <td className="py-2.5 px-4 text-slate-400">{dev.mac}</td>
                       <td className="py-2.5 px-4 text-slate-200">{dev.vendor}</td>
-                      <td className="py-2.5 px-4 text-cyan-400 text-[11px]">{dev.deviceType}</td>
+                      <td className="py-2.5 px-4 text-blue-400 text-[11px]">{dev.deviceType}</td>
                       <td className="py-2.5 px-4">
                         <StatusBadge status={dev.status} />
                       </td>
@@ -363,9 +363,9 @@ export default function InitialSetupPage() {
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg"
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
             >
-              <span>Review Core Fabric & Governance</span>
+              <span>Review Routing Fabric & Policies</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -446,17 +446,17 @@ export default function InitialSetupPage() {
             <button
               onClick={handleExecuteBootstrap}
               disabled={bootstrapMutation.isPending}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-lg text-xs font-bold transition-all shadow-xl shadow-cyan-900/50"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
             >
               {bootstrapMutation.isPending ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Provisioning Live Platform...</span>
+                  <span>Provisioning Infrastructure...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Commit 100% Live Architecture Now</span>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Deploy & Commit Configuration</span>
                 </>
               )}
             </button>
@@ -464,16 +464,16 @@ export default function InitialSetupPage() {
         </div>
       )}
 
-      {/* Step 4: Live Network Operational */}
+      {/* Step 4: Infrastructure Deployed */}
       {step === 4 && bootstrapResult && (
-        <div className="bg-[#121824] border border-emerald-500/40 rounded-xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95">
+        <div className="bg-[#121824] border border-[#1E293B] rounded-xl p-8 space-y-6 shadow-2xl animate-in zoom-in-95">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
-              <CheckCircle2 className="w-7 h-7" />
+            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">100% Live Enterprise Network Operational!</h2>
-            <p className="text-xs text-slate-300 max-w-xl mx-auto">
-              All demo seed data has been removed. The entire platform hierarchy is running on live Linux kernel telemetry and real discovered devices.
+            <h2 className="text-xl font-bold text-white tracking-tight">Enterprise Infrastructure Initialized</h2>
+            <p className="text-xs text-slate-400 max-w-xl mx-auto">
+              Network fabric and edge nodes have been configured. Live host telemetry and device routing tables are synchronized.
             </p>
           </div>
 
@@ -481,7 +481,7 @@ export default function InitialSetupPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-[#0D121D] border border-[#222E45] rounded-lg p-4 text-center">
               <p className="text-slate-400 text-[10px] uppercase font-mono">Discovered Fleet</p>
-              <p className="text-2xl font-bold text-cyan-400 mt-1">{bootstrapResult.enrolledGatewaysCount}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1">{bootstrapResult.enrolledGatewaysCount}</p>
               <p className="text-[10px] text-slate-500 mt-0.5">Physical Devices</p>
             </div>
             <div className="bg-[#0D121D] border border-[#222E45] rounded-lg p-4 text-center">
@@ -496,25 +496,25 @@ export default function InitialSetupPage() {
             </div>
             <div className="bg-[#0D121D] border border-[#222E45] rounded-lg p-4 text-center">
               <p className="text-slate-400 text-[10px] uppercase font-mono">Monitored Targets</p>
-              <p className="text-sm font-bold text-cyan-300 font-mono mt-2">
-                {targetIps.length > 0 ? `${targetIps.length} Custom Target(s)` : 'Subnet Dynamic'}
+              <p className="text-sm font-bold text-slate-200 font-mono mt-2">
+                {targetIps.length > 0 ? `${targetIps.length} Target(s)` : 'Subnet Dynamic'}
               </p>
-              <p className="text-[10px] text-amber-400 mt-0.5">Continuous ICMP Polling</p>
+              <p className="text-[10px] text-emerald-400 mt-0.5">Continuous ICMP Polling</p>
             </div>
           </div>
 
-          {/* Direct Navigation Links for Client Presentation */}
+          {/* Operational Verification Links */}
           <div className="border-t border-[#222E45] pt-6">
             <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
-              Explore Live Modules (Real Production State)
+              Operational Modules
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Link
                 href="/gateways"
-                className="p-3 bg-[#0D121D] hover:bg-[#162032] border border-[#222E45] hover:border-cyan-500/50 rounded-lg text-xs font-medium text-slate-200 flex items-center justify-between transition-all"
+                className="p-3 bg-[#0D121D] hover:bg-[#162032] border border-[#222E45] hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 flex items-center justify-between transition-all"
               >
                 <span>Gateways & Fleet</span>
-                <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-blue-400" />
               </Link>
               <Link
                 href="/incidents"
@@ -534,7 +534,7 @@ export default function InitialSetupPage() {
                 href="/dashboard"
                 className="p-3 bg-[#0D121D] hover:bg-[#162032] border border-[#222E45] hover:border-emerald-500/50 rounded-lg text-xs font-medium text-slate-200 flex items-center justify-between transition-all"
               >
-                <span>Overview NOC Telemetry</span>
+                <span>Overview Telemetry</span>
                 <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
               </Link>
             </div>

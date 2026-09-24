@@ -13,26 +13,25 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, subtitle, href, badge, badgeColor = 'blue', icon }: MetricCardProps) {
   const content = (
-    <div className="bg-[#121824] border border-[#222E45] rounded-lg p-4 hover:border-[#384b6e] transition-all cursor-pointer relative overflow-hidden group">
+    <div className="bg-[#0F172A]/80 hover:bg-[#131D33] border border-[#1E293B] hover:border-slate-700 rounded-xl p-4.5 transition-all cursor-pointer relative overflow-hidden group shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</span>
-        {icon && <div className="text-slate-400 group-hover:text-cyan-400 transition-colors">{icon}</div>}
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{title}</span>
+        {icon && <div className="text-slate-400 group-hover:text-blue-400 transition-colors">{icon}</div>}
       </div>
-      <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-white tracking-tight">{value}</span>
+      <div className="mt-2.5 flex items-baseline gap-2">
+        <span className="text-2xl font-bold text-white tracking-tight font-sans">{value}</span>
         {badge && (
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            badgeColor === 'rose' ? 'bg-rose-950 text-rose-400 border border-rose-800' :
-            badgeColor === 'amber' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
-            badgeColor === 'emerald' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
-            'bg-blue-950 text-blue-400 border border-blue-800'
+          <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+            badgeColor === 'rose' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+            badgeColor === 'amber' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+            badgeColor === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+            'bg-blue-500/10 text-blue-400 border border-blue-500/20'
           }`}>
             {badge}
           </span>
         )}
       </div>
       {subtitle && <p className="mt-1 text-xs text-slate-400">{subtitle}</p>}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent group-hover:via-cyan-400 transition-all" />
     </div>
   );
 

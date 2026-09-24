@@ -525,10 +525,10 @@ export default function IncidentsPage() {
                     )}
 
                     {/* Prescriptive Remediation */}
-                    <div className="p-2.5 bg-gradient-to-r from-cyan-950/40 to-blue-950/40 rounded border border-cyan-500/40 space-y-1 text-[11px]">
-                      <span className="text-cyan-400 font-bold block text-[10px] uppercase flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-cyan-400" />
-                        <span>Prescriptive Remediation Action:</span>
+                    <div className="p-3 bg-[#0F172A] rounded-xl border border-blue-500/30 space-y-1.5 text-[11px]">
+                      <span className="text-blue-400 font-semibold block text-[10px] uppercase flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Recommended Remediation Action:</span>
                       </span>
                       <p className="text-slate-200">{aiRcaResult?.recommendedAction || 'Execute live ARP flush, verify FIB reachability, and toggle link failover steering.'}</p>
                     </div>

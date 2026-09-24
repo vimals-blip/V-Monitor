@@ -5,7 +5,7 @@ import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import {
   Search, RefreshCw, Plus, GitBranch, Navigation, Activity,
-  Trash2, X, Check, Compass, Radio, MapPin
+  Trash2, X, Check, Compass, Radio, MapPin, ArrowRight, Terminal, CheckCircle2
 } from 'lucide-react';
 
 export default function RoutingPage() {
@@ -292,57 +292,128 @@ export default function RoutingPage() {
         </table>
       </div>
 
-      {/* Traceroute Modal */}
+      {/* Enterprise Kernel FIB Route Path & Hop Tracer Inspector */}
       {traceModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
-                  <Navigation className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-[#1E293B] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-0">
+            {/* Header */}
+            <div className="bg-[#0F172A] px-6 py-4 border-b border-[#1E293B] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20">
+                  <Navigation className="w-5 h-5" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Traceroute Probe to: {traceModal.route?.prefix}
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-white tracking-tight">Linux Kernel FIB Path & Hop Tracer</h2>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/60 font-medium">
+                      {traceModal.result?.pathStatus || 'RESOLVED'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                    Prefix: {traceModal.route?.prefix} • Protocol: {traceModal.route?.protocol || 'KERNEL'}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setTraceModal(null)} className="text-slate-400 hover:text-white p-1">
+              <button
+                onClick={() => setTraceModal(null)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1E293B] transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-3 font-mono text-xs">
+            <div className="p-6 space-y-4 font-mono text-xs">
               {traceModal.loading ? (
-                <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-slate-300 font-semibold">Tracing network hops...</p>
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                  <p className="text-slate-300 font-semibold font-sans">Evaluating Linux kernel forwarding table (FIB)...</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="bg-[#121824] p-3 rounded-lg border border-[#222E45] space-y-2">
-                    <div className="text-[10px] text-slate-400 uppercase font-bold flex items-center justify-between">
-                      <span>Kernel FIB Route Resolution:</span>
-                      <span className="text-emerald-400 font-bold">{traceModal.result?.pathStatus}</span>
+                <div className="space-y-4">
+                  {/* Visual Route Hop Topology */}
+                  <div className="bg-[#0F172A] p-4 rounded-xl border border-[#1E293B] space-y-2">
+                    <span className="text-slate-400 text-[10px] uppercase font-sans tracking-wider block">
+                      Forwarding Path Flow
+                    </span>
+                    <div className="flex items-center justify-between bg-[#090D16] p-3 rounded-lg border border-[#1E293B] text-[11px]">
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">HOST ORIGIN</span>
+                        <span className="text-white font-bold">192.168.2.212</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2">
+                        <span className="text-[9px] text-blue-400 font-mono">{traceModal.route?.interfaceName || 'eno1'}</span>
+                        <ArrowRight className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">NEXT-HOP GATEWAY</span>
+                        <span className="text-emerald-400 font-bold">{traceModal.route?.nextHop || '192.168.0.50'}</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2">
+                        <span className="text-[9px] text-slate-500 font-mono">FIB</span>
+                        <ArrowRight className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-slate-500 text-[10px] block">DESTINATION SUBNET</span>
+                        <span className="text-blue-300 font-bold">{traceModal.route?.prefix}</span>
+                      </div>
                     </div>
-                    <pre className="p-3 bg-[#05080E] rounded border border-[#222E45] text-cyan-300 text-[11px] overflow-x-auto leading-relaxed">
+                  </div>
+
+                  {/* Route Parameters Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">ROUTE METRIC</span>
+                      <span className="text-white font-bold mt-0.5 block">#{traceModal.route?.metric || 20}</span>
+                    </div>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">INTERFACE</span>
+                      <span className="text-blue-400 font-bold mt-0.5 block">{traceModal.route?.interfaceName || 'eno1'}</span>
+                    </div>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">PROTOCOL</span>
+                      <span className="text-purple-400 font-bold mt-0.5 block">{traceModal.route?.protocol || 'KERNEL'}</span>
+                    </div>
+                    <div className="bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                      <span className="text-slate-500 block text-[10px]">FIB STATUS</span>
+                      <span className="text-emerald-400 font-bold mt-0.5 block">CONVERGED</span>
+                    </div>
+                  </div>
+
+                  {/* Raw Kernel FIB Output Terminal */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-sans">
+                      <span>Kernel FIB Route Resolution:</span>
+                      <span className="text-emerald-400 font-mono font-bold">{traceModal.result?.pathStatus}</span>
+                    </div>
+                    <pre className="p-3.5 bg-[#05080E] rounded-xl border border-[#1E293B] text-emerald-400 text-[11px] overflow-x-auto leading-relaxed">
                       {traceModal.result?.routeOutput}
                     </pre>
-                  </div>
-                  <div className="p-3 bg-[#05080E] rounded-lg border border-[#222E45] text-slate-400 text-[11px] space-y-1">
-                    <div>✓ Target: <span className="text-white font-mono">{traceModal.result?.target}</span></div>
-                    <div>✓ Next-hop interface: <span className="text-cyan-400 font-mono">{traceModal.route?.interfaceName || 'eno1 / wg0'}</span></div>
-                    <div>✓ FIB Status: <span className="text-emerald-400">{traceModal.result?.fibConvergence}</span></div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
-              <button
-                onClick={() => setTraceModal(null)}
-                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
-              >
-                Close
-              </button>
+            {/* Footer */}
+            <div className="bg-[#0F172A] px-6 py-3.5 border-t border-[#1E293B] flex items-center justify-between font-sans">
+              <span className="text-[11px] text-slate-500 font-mono">
+                Kernel Target: {traceModal.result?.target || traceModal.route?.prefix}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => traceMutation.mutate(traceModal.route)}
+                  disabled={traceMutation.isPending}
+                  className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${traceMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>Re-Probe</span>
+                </button>
+                <button
+                  onClick={() => setTraceModal(null)}
+                  className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors shadow-sm"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
