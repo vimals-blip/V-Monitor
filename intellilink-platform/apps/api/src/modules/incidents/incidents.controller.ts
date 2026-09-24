@@ -39,6 +39,12 @@ export class IncidentsController {
     return this.service.update(id, dto, user);
   }
 
+  @Post(':id/remediate')
+  @ApiOperation({ summary: 'Execute live Linux kernel network remediation and automated healing' })
+  remediate(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.service.remediateIncident(id, user);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete incident' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {

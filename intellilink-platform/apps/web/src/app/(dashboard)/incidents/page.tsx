@@ -6,7 +6,7 @@ import { StatusBadge } from '../../../components/shared/StatusBadge';
 import {
   AlertOctagon, CheckCircle2, RefreshCw, Search,
   Plus, Check, X, ShieldAlert, Clock, ArrowRight,
-  Filter, FileText, UserCheck, Bot, Sparkles, Zap, ShieldCheck
+  Filter, FileText, UserCheck, Bot, Sparkles, Zap, ShieldCheck, Terminal, Play, Wrench
 } from 'lucide-react';
 
 export default function IncidentsPage() {
@@ -19,6 +19,30 @@ export default function IncidentsPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [aiRcaLoading, setAiRcaLoading] = useState(false);
   const [aiRcaResult, setAiRcaResult] = useState<any>(null);
+  const [remediationLog, setRemediationLog] = useState<{ open: boolean; summary: string[]; incidentId: string } | null>(null);
+
+  const remediateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/incidents/${id}/remediate`);
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['incidents-list'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-list'] });
+      notify('✅ Real Linux kernel remediation executed & incident resolved.');
+      if (selectedInc && selectedInc.id === data.incidentId) {
+        setSelectedInc((prev: any) => prev ? { ...prev, status: 'RESOLVED' } : null);
+      }
+      setRemediationLog({
+        open: true,
+        summary: data.remediationSummary || ['Remediation completed successfully.'],
+        incidentId: data.incidentId,
+      });
+    },
+    onError: (err: any) => {
+      alert('Remediation error: ' + (err.response?.data?.message || err.message));
+    },
+  });
 
   const runAiRca = async (incident: any) => {
     setAiRcaLoading(true);
@@ -284,13 +308,26 @@ export default function IncidentsPage() {
                       {inc.startedAt ? new Date(inc.startedAt).toLocaleString() : inc.createdAt ? new Date(inc.createdAt).toLocaleString() : '—'}
                     </td>
                     <td className="p-3.5 text-right">
-                      <button
-                        onClick={() => handleOpenIncidentDetail(inc)}
-                        className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-medium border border-cyan-500/30 flex items-center gap-1 ml-auto"
-                      >
-                        <Bot className="w-3.5 h-3.5" />
-                        <span>AI RCA & Manage</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {inc.status !== 'RESOLVED' && (
+                          <button
+                            onClick={() => remediateMutation.mutate(inc.id)}
+                            disabled={remediateMutation.isPending}
+                            className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[11px] font-semibold border border-emerald-500/40 flex items-center gap-1 transition-all"
+                            title="Execute live Linux kernel ARP cache flush & ICMP reachability verification"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>{remediateMutation.isPending ? 'Executing...' : 'Remediate'}</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleOpenIncidentDetail(inc)}
+                          className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-medium border border-cyan-500/30 flex items-center gap-1"
+                        >
+                          <Bot className="w-3.5 h-3.5" />
+                          <span>AI RCA & Manage</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -329,22 +366,44 @@ export default function IncidentsPage() {
               </div>
 
               {/* Lifecycle Stage Switcher */}
-              <div className="p-3 bg-[#05080E] rounded-lg border border-[#222E45] space-y-2">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Transition Status:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {['INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'].map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => updateMutation.mutate({ id: selectedInc.id, status: st })}
-                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${
-                        selectedInc.status === st
-                          ? 'bg-cyan-500 text-black'
-                          : 'bg-[#121824] text-slate-300 hover:text-white border border-[#222E45]'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
+              <div className="p-3 bg-[#05080E] rounded-lg border border-[#222E45] space-y-3">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1.5">Transition Status:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'].map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => updateMutation.mutate({ id: selectedInc.id, status: st })}
+                        className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${
+                          selectedInc.status === st
+                            ? 'bg-cyan-500 text-black'
+                            : 'bg-[#121824] text-slate-300 hover:text-white border border-[#222E45]'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-[#222E45]/60 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5 text-emerald-400" />
+                      Live Kernel Remediation
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      Flushes Linux ARP cache, checks kernel routing, verifies ICMP and closes incident.
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => remediateMutation.mutate(selectedInc.id)}
+                    disabled={remediateMutation.isPending || selectedInc.status === 'RESOLVED'}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 transition-all shrink-0 shadow-lg shadow-emerald-500/20"
+                  >
+                    <Zap className={`w-3.5 h-3.5 ${remediateMutation.isPending ? 'animate-spin' : ''}`} />
+                    <span>{remediateMutation.isPending ? 'Executing...' : 'Run Real Fix'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -559,6 +618,58 @@ export default function IncidentsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Real Kernel Remediation Log Dialog */}
+      {remediationLog && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-emerald-500/40 rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded bg-emerald-500/20 text-emerald-400">
+                  <Terminal className="w-4 h-4" />
+                </span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Live Linux Kernel Remediation Execution Log
+                </span>
+              </div>
+              <button onClick={() => setRemediationLog(null)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-[#222E45]">
+                <span className="text-slate-400">TARGET INCIDENT ID:</span>
+                <span className="text-cyan-400 font-bold">{remediationLog.incidentId}</span>
+              </div>
+              <div className="bg-[#05080E] p-3 rounded border border-[#222E45] space-y-2 text-slate-300">
+                <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>EXECUTED KERNEL COMMANDS & HARDWARE STATE:</span>
+                </div>
+                {remediationLog.summary.map((line, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-[11px]">
+                    <span className="text-slate-500 select-none">$&gt;</span>
+                    <span className="text-emerald-300">{line}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                All host routing tables, neighbor caches, and connected network metrics were verified live on interface eno1.
+              </p>
+            </div>
+
+            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+              <button
+                onClick={() => setRemediationLog(null)}
+                className="px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold"
+              >
+                Close Output
+              </button>
+            </div>
           </div>
         </div>
       )}

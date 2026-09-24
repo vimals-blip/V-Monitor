@@ -114,6 +114,20 @@ export default function RoutingPage() {
     }
   });
 
+  const syncKernelMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/routing/sync-kernel');
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['routing-list'] });
+      notify(`✅ Synced with Linux Kernel FIB: ${data.syncedCount || 0} routes updated.`);
+    },
+    onError: (err: any) => {
+      alert('Kernel sync failed: ' + (err.response?.data?.message || err.message));
+    },
+  });
+
   const handleTraceroute = (route: any) => {
     setTraceModal({ open: true, route, loading: true });
     traceMutation.mutate(route);
@@ -142,6 +156,15 @@ export default function RoutingPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => syncKernelMutation.mutate()}
+            disabled={syncKernelMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-medium text-xs transition-colors"
+            title="Read and sync real-time kernel routing table (/usr/bin/ip route)"
+          >
+            <GitBranch className={`w-4 h-4 ${syncKernelMutation.isPending ? 'animate-spin' : ''}`} />
+            <span>{syncKernelMutation.isPending ? 'Syncing FIB...' : 'Sync Kernel FIB'}</span>
+          </button>
           <button
             onClick={() => refetch()}
             className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"

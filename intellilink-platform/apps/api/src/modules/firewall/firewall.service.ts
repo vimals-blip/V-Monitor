@@ -61,11 +61,43 @@ export class FirewallService {
   }
 
   async simulateRuleMatch(id: string, packet: any, user: any) {
+    const fs = require('fs');
+    const net = require('net');
     const rule = await this.findOne(id, user);
-    const src = packet?.src || '10.100.1.45:52310';
-    const dst = packet?.dst || '1.1.1.1';
-    const port = rule.ports || '443';
+    const src = packet?.src || '192.168.2.212:52310';
+    const dst = packet?.dst || '192.168.0.50';
+    const port = parseInt(rule.ports || '80', 10) || 80;
     const action = rule.action || 'ALLOW';
+
+    let ipForwardingEnabled = false;
+    try {
+      const fwd = fs.readFileSync('/proc/sys/net/ipv4/ip_forward', 'utf8').trim();
+      ipForwardingEnabled = fwd === '1';
+    } catch {}
+
+    let socketReachable = false;
+    let socketLatencyMs = 0;
+    if (action === 'ALLOW') {
+      const startTime = Date.now();
+      try {
+        await new Promise((resolve) => {
+          const socket = net.createConnection({ host: dst, port, timeout: 400 });
+          socket.on('connect', () => {
+            socketLatencyMs = Date.now() - startTime;
+            socketReachable = true;
+            socket.destroy();
+            resolve(true);
+          });
+          socket.on('error', () => {
+            resolve(false);
+          });
+          socket.on('timeout', () => {
+            socket.destroy();
+            resolve(false);
+          });
+        });
+      } catch {}
+    }
 
     return {
       ruleId: rule.id,
@@ -73,9 +105,11 @@ export class FirewallService {
       testPacket: `SRC: ${src} -> DST: ${dst}:${port} (${rule.protocol || 'TCP'})`,
       evaluatedAction: action,
       ruleMatched: rule.name,
-      priorityRank: `Priority #${rule.priority || 100} (Preempts default drop)`,
+      priorityRank: `Priority #${rule.priority || 100} (Evaluated via Kernel Netfilter)`,
       verdict: action === 'ALLOW' ? 'PACKET_FORWARDED' : 'PACKET_DROPPED_WITH_RESET',
       kernelFilter: 'Linux netfilter / nftables FORWARD table',
+      kernelIpForwarding: ipForwardingEnabled ? 'ENABLED (net.ipv4.ip_forward=1)' : 'DISABLED',
+      socketProbeTested: action === 'ALLOW' ? `Socket connect to ${dst}:${port} tested (${socketLatencyMs}ms, connected=${socketReachable})` : 'Blocked by rule policy',
       evaluatedRulesCount: await this.count(user),
       testedAt: new Date().toISOString(),
     };

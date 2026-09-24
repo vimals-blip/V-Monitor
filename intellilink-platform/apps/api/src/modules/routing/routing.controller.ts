@@ -39,6 +39,12 @@ export class RoutingController {
     return this.service.update(id, dto, user);
   }
 
+  @Post('sync-kernel')
+  @ApiOperation({ summary: 'Sync routing table with live Linux kernel FIB' })
+  syncKernel(@CurrentUser() user: any) {
+    return this.service.syncKernelRoutes(user);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete routing' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
