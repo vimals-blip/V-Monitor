@@ -3,29 +3,41 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import { Search, RefreshCw, Plus } from 'lucide-react';
 
 export default function PlatformUsersPage() {
   const [search, setSearch] = useState('');
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['users-list', search],
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const { data: userResponse, isLoading, refetch } = useQuery({
+    queryKey: ['users-list', search, page, pageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/users?search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/users?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`);
+      return res.data;
     },
   });
+
+  const data = Array.isArray(userResponse?.data)
+    ? userResponse.data
+    : Array.isArray(userResponse)
+    ? userResponse
+    : [];
+  const totalUsers = userResponse?.total ?? data.length;
+  const totalPages = userResponse?.totalPages ?? Math.max(1, Math.ceil(totalUsers / pageSize));
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Platform Users</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Manage and observe multi-tenant platform users</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Platform Users</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and observe multi-tenant platform users</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-white"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
@@ -33,22 +45,25 @@ export default function PlatformUsersPage() {
         </div>
       </div>
 
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg p-3">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg p-3">
         <div className="relative max-w-sm">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search platform users..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#0B0F17] border border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-cyan-500"
           />
         </div>
       </div>
 
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg overflow-hidden">
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
             <tr>
               <th className="p-3.5">Email</th>
               <th className="p-3.5">Role</th>
@@ -57,7 +72,7 @@ export default function PlatformUsersPage() {
               <th className="p-3.5 text-right">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#222E45] text-slate-300">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300">
             {isLoading ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-slate-500">Loading data from control plane...</td>
@@ -68,10 +83,10 @@ export default function PlatformUsersPage() {
               </tr>
             ) : (
               data.map((item: any) => (
-                <tr key={item.id} className="hover:bg-[#161F30] transition-colors">
-                  <td className="p-3.5 font-medium text-white">{item.email || '—'}</td>
-                  <td className="p-3.5 font-mono text-slate-400">{item.role || '—'}</td>
-                  <td className="p-3.5 text-slate-300">{item.firstName || '—'}</td>
+                <tr key={item.id} className="hover:bg-slate-50 dark:bg-[#161F30] transition-colors">
+                  <td className="p-3.5 font-medium text-slate-900 dark:text-white">{item.email || '—'}</td>
+                  <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400">{item.role || '—'}</td>
+                  <td className="p-3.5 text-slate-600 dark:text-slate-300">{item.firstName || '—'}</td>
                   <td className="p-3.5"><StatusBadge status={item.status || 'ACTIVE'} /></td>
                   <td className="p-3.5 text-right text-slate-500 font-mono">
                     {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—'}
@@ -82,6 +97,19 @@ export default function PlatformUsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Users Pagination */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalUsers}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(sz) => {
+          setPageSize(sz);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

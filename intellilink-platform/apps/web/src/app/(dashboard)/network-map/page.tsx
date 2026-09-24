@@ -8,7 +8,7 @@ import {
   ArrowDown, RefreshCw, X, Radio, Activity, CheckCircle2,
   HardDrive, Zap, Send, ShieldCheck, Terminal, Search,
   RotateCw, Key, AlertTriangle, Layers, LayoutGrid, List,
-  Wifi, Satellite, Check, Copy, Flame
+  Wifi, Satellite, Check, Copy, Flame, Sparkles
 } from 'lucide-react';
 
 export default function NetworkMapPage() {

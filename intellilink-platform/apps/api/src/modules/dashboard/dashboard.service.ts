@@ -40,6 +40,10 @@ export class DashboardService {
     const degradedSites = await this.siteRepo.count({ where: { ...filter, status: 'DEGRADED' } });
     const offlineSites = await this.siteRepo.count({ where: { ...filter, status: 'OFFLINE' } });
 
+    const onlineGateways = await this.gatewayRepo.count({ where: { ...filter, status: 'ONLINE' } });
+    const degradedGateways = await this.gatewayRepo.count({ where: { ...filter, status: 'DEGRADED' } });
+    const offlineGateways = await this.gatewayRepo.count({ where: { ...filter, status: 'OFFLINE' } });
+
     const openAlerts = await this.alertRepo.count({ where: { ...filter, status: 'OPEN' } });
     const criticalIncidents = await this.incidentRepo.count({ where: { ...filter, status: 'OPEN', priority: 'P1' } });
 
@@ -47,6 +51,9 @@ export class DashboardService {
       tenants: tenantCount,
       sites: siteCount,
       gateways: gatewayCount,
+      onlineGateways,
+      degradedGateways,
+      offlineGateways,
       pops: popCount,
       aggregators: aggregatorCount,
       activeTunnels: tunnelCount,

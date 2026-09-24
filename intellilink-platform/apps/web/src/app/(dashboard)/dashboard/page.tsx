@@ -71,26 +71,26 @@ export default function DashboardPage() {
       {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Operations &amp; Network Health Overview</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Real-time monitoring across edge gateways, carrier circuits, and cloud PoPs.</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Operations &amp; Network Health Overview</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Real-time monitoring across edge gateways, carrier circuits, and cloud PoPs.</p>
         </div>
         <div className="flex items-center gap-3">
           {liveEvent && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>Event: {liveEvent.data.title || 'Network State Change'}</span>
             </div>
           )}
           <Link
             href="/gateways"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-slate-200 border border-[#1E293B] text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#0F172A] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-200 border border-slate-200 dark:border-[#1E293B] text-xs font-medium transition-colors"
           >
-            <Cpu className="w-3.5 h-3.5 text-blue-400" />
+            <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Gateway Fleet</span>
           </Link>
           <Link
             href="/network-map"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors"
           >
             <span>Topology Map</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -118,27 +118,27 @@ export default function DashboardPage() {
       {/* Second Row KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Site Health */}
-        <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-5 space-y-3">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Branch Site Connectivity</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Branch Site Connectivity</span>
             <StatusBadge status={degradedSites > 0 ? 'DEGRADED' : 'ONLINE'} />
           </div>
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400">Online Sites</span>
-                <span className="text-emerald-400 font-semibold">{onlineSites} / {totalSites}</span>
+                <span className="text-slate-500 dark:text-slate-400">Online Sites</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{onlineSites} / {totalSites}</span>
               </div>
-              <div className="w-full bg-[#1C263A] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-[#1C263A] h-2 rounded-full overflow-hidden">
                 <div className="bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${onlinePercent}%` }} />
               </div>
             </div>
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400">Degraded Circuits</span>
-                <span className="text-amber-400 font-semibold">{degradedSites}</span>
+                <span className="text-slate-500 dark:text-slate-400">Degraded Circuits</span>
+                <span className="text-amber-600 dark:text-amber-400 font-semibold">{degradedSites}</span>
               </div>
-              <div className="w-full bg-[#1C263A] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-[#1C263A] h-2 rounded-full overflow-hidden">
                 <div className="bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${degradedPercent}%` }} />
               </div>
             </div>
@@ -146,41 +146,41 @@ export default function DashboardPage() {
         </div>
 
         {/* Live Kernel Host Telemetry */}
-        <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-5 space-y-3">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Controller Host Telemetry</span>
-            <span className="text-xs font-mono text-emerald-400 font-semibold">eno1 (1 Gbps)</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Controller Host Telemetry</span>
+            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">eno1 (1 Gbps)</span>
           </div>
-          <p className="text-xs text-slate-400">Linux kernel socket metrics and system counters polled live.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Linux kernel socket metrics and system counters polled live.</p>
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="p-2.5 bg-[#090D16] rounded-lg border border-[#1E293B]">
+            <div className="p-2.5 bg-slate-50 dark:bg-[#090D16] rounded-lg border border-slate-200 dark:border-[#1E293B]">
               <span className="block text-slate-500 text-[10px]">CPU Cores</span>
-              <span className="font-mono text-white font-bold">{hostTelemetry?.cpuCount ?? 8} vCPUs</span>
+              <span className="font-mono text-slate-900 dark:text-white font-bold">{hostTelemetry?.cpuCount ?? 8} vCPUs</span>
             </div>
-            <div className="p-2.5 bg-[#090D16] rounded-lg border border-[#1E293B]">
+            <div className="p-2.5 bg-slate-50 dark:bg-[#090D16] rounded-lg border border-slate-200 dark:border-[#1E293B]">
               <span className="block text-slate-500 text-[10px]">RAM Usage</span>
-              <span className="font-mono text-blue-400 font-bold">{hostTelemetry?.memoryUsagePercent ?? 75}%</span>
+              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{hostTelemetry?.memoryUsagePercent ?? 75}%</span>
             </div>
-            <div className="p-2.5 bg-[#090D16] rounded-lg border border-[#1E293B]">
+            <div className="p-2.5 bg-slate-50 dark:bg-[#090D16] rounded-lg border border-slate-200 dark:border-[#1E293B]">
               <span className="block text-slate-500 text-[10px]">Gateway RTT</span>
-              <span className="font-mono text-emerald-400 font-bold">0.14 ms</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">0.14 ms</span>
             </div>
           </div>
         </div>
 
         {/* AI Operations */}
-        <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-5 space-y-3">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#1E293B] rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Intelligent RCA Engine</span>
-            <span className="text-xs font-mono text-blue-400 font-semibold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Intelligent RCA Engine</span>
+            <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               ACTIVE
             </span>
           </div>
-          <p className="text-xs text-slate-400">Automated root-cause analysis and proactive circuit anomaly detection.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Automated root-cause analysis and proactive circuit anomaly detection.</p>
           <Link
             href="/ai-assistant"
-            className="inline-block w-full text-center py-2 px-3 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-medium border border-blue-500/20 transition-all"
+            className="inline-block w-full text-center py-2 px-3 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20 transition-all"
           >
             Launch AI Copilot →
           </Link>
@@ -188,28 +188,28 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Alerts Feed */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg overflow-hidden">
-        <div className="p-4 border-b border-[#222E45] flex items-center justify-between">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg overflow-hidden">
+        <div className="p-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <h2 className="text-sm font-semibold text-white">Live Alert & Telemetry Stream</h2>
+            <Activity className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Live Alert & Telemetry Stream</h2>
           </div>
-          <Link href="/alerts" className="text-xs text-cyan-400 hover:underline">
+          <Link href="/alerts" className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline">
             View All Alerts ({summary?.openAlerts ?? 0})
           </Link>
         </div>
-        <div className="divide-y divide-[#222E45]">
+        <div className="divide-y divide-slate-200 dark:divide-[#222E45]">
           {(recentAlerts || []).length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-500">No active critical alerts. All circuits nominal.</div>
           ) : (
             (recentAlerts || []).map((a: any) => (
-              <div key={a.id} className="p-4 flex items-center justify-between hover:bg-[#161F30] transition-colors">
+              <div key={a.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:bg-[#161F30] transition-colors">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-white">{a.title}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white">{a.title}</span>
                     <StatusBadge status={a.severity} />
                   </div>
-                  <p className="text-xs text-slate-400">{a.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{a.description}</p>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-mono text-slate-500">{new Date(a.createdAt).toLocaleTimeString()}</span>

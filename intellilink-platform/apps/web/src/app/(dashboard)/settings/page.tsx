@@ -70,22 +70,22 @@ export default function SettingsPage() {
       )}
 
       <div>
-        <h1 className="text-xl font-bold text-white tracking-tight">Control Plane Settings & Physical Infrastructure Bindings</h1>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Control Plane Settings & Physical Infrastructure Bindings</h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Real enterprise network adapter bindings, kernel sysfs telemetry poller, and physical equipment discovery.
         </p>
       </div>
 
       {/* Production Network Adapter & Kernel Telemetry Engine */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl p-6 space-y-5">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Activity className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-sm font-bold text-white">Live Physical Telemetry Provider</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Live Physical Telemetry Provider</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Direct Linux kernel sysfs counter reader & ICMP socket probe engine.
               </p>
             </div>
@@ -111,27 +111,27 @@ export default function SettingsPage() {
 
         {/* Physical Host Adapter Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
-          <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#222E45]">
-            <p className="font-sans font-semibold text-slate-400">Primary NIC Interface</p>
-            <p className="text-cyan-400 font-bold mt-1 text-sm">{primaryNic?.name || 'eno1'}</p>
+          <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+            <p className="font-sans font-semibold text-slate-500 dark:text-slate-400">Primary NIC Interface</p>
+            <p className="text-cyan-600 dark:text-cyan-400 font-bold mt-1 text-sm">{primaryNic?.name || 'eno1'}</p>
             <p className="text-[10px] text-slate-500 mt-0.5">Status: {primaryNic?.operstate || 'UP'}</p>
           </div>
-          <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#222E45]">
-            <p className="font-sans font-semibold text-slate-400">Host IPv4 Address</p>
+          <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+            <p className="font-sans font-semibold text-slate-500 dark:text-slate-400">Host IPv4 Address</p>
             <p className="text-emerald-400 font-bold mt-1 text-sm">{primaryNic?.ipv4 || '192.168.2.212'}/20</p>
             <p className="text-[10px] text-slate-500 mt-0.5">Gateway: 192.168.0.50</p>
           </div>
-          <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#222E45]">
-            <p className="font-sans font-semibold text-slate-400">Physical MAC Address</p>
-            <p className="text-slate-300 font-bold mt-1 text-xs">{primaryNic?.mac || 'ec:b1:d7:5e:d0:3c'}</p>
-            <p className="text-[10px] text-cyan-400 mt-0.5">Intel Server NIC</p>
+          <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+            <p className="font-sans font-semibold text-slate-500 dark:text-slate-400">Physical MAC Address</p>
+            <p className="text-slate-600 dark:text-slate-300 font-bold mt-1 text-xs">{primaryNic?.mac || 'ec:b1:d7:5e:d0:3c'}</p>
+            <p className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-0.5">Intel Server NIC</p>
           </div>
-          <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#222E45]">
-            <p className="font-sans font-semibold text-slate-400">Kernel RX/TX Counters</p>
-            <p className="text-white font-bold mt-1 text-xs">
+          <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+            <p className="font-sans font-semibold text-slate-500 dark:text-slate-400">Kernel RX/TX Counters</p>
+            <p className="text-slate-900 dark:text-white font-bold mt-1 text-xs">
               RX: {((primaryNic?.statistics?.rxBytes || 0) / 1024 / 1024).toFixed(1)} MB
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               TX: {((primaryNic?.statistics?.txBytes || 0) / 1024 / 1024).toFixed(1)} MB
             </p>
           </div>
@@ -139,73 +139,73 @@ export default function SettingsPage() {
       </div>
 
       {/* Production Adapter Bindings */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl p-6 space-y-5">
-        <h2 className="text-sm font-bold text-white flex items-center gap-2">
-          <Key className="w-4 h-4 text-cyan-400" />
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-5">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <Key className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
           Production Adapter Provider Bindings
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 bg-[#0B0F17] rounded-lg border border-[#222E45]">
+          <div className="p-3.5 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-slate-300">Telemetry Provider</p>
+              <p className="font-semibold text-slate-600 dark:text-slate-300">Telemetry Provider</p>
               <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                 ACTIVE
               </span>
             </div>
-            <p className="font-mono text-cyan-400 mt-1.5">ProductionKernelNetworkProvider</p>
-            <p className="text-[11px] text-slate-400 mt-1">Direct Linux kernel /proc/net/arp & sysfs /sys/class/net/eno1</p>
+            <p className="font-mono text-cyan-600 dark:text-cyan-400 mt-1.5">ProductionKernelNetworkProvider</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Direct Linux kernel /proc/net/arp & sysfs /sys/class/net/eno1</p>
           </div>
 
-          <div className="p-3.5 bg-[#0B0F17] rounded-lg border border-[#222E45]">
+          <div className="p-3.5 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-slate-300">Gateway Provider</p>
+              <p className="font-semibold text-slate-600 dark:text-slate-300">Gateway Provider</p>
               <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                 ACTIVE
               </span>
             </div>
-            <p className="font-mono text-cyan-400 mt-1.5">ProductionGatewayProvider</p>
-            <p className="text-[11px] text-slate-400 mt-1">Live ICMP RTT latency + SSH/RESTCONF physical appliance integration</p>
+            <p className="font-mono text-cyan-600 dark:text-cyan-400 mt-1.5">ProductionGatewayProvider</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Live ICMP RTT latency + SSH/RESTCONF physical appliance integration</p>
           </div>
 
-          <div className="p-3.5 bg-[#0B0F17] rounded-lg border border-[#222E45]">
+          <div className="p-3.5 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-slate-300">Tunnel Provider</p>
-              <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+              <p className="font-semibold text-slate-600 dark:text-slate-300">Tunnel Provider</p>
+              <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-mono font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
                 READY
               </span>
             </div>
-            <p className="font-mono text-cyan-400 mt-1.5">WireGuardAdapterProvider</p>
-            <p className="text-[11px] text-slate-400 mt-1">Kernel wg0 dynamic tunnel management & key rotation</p>
+            <p className="font-mono text-cyan-600 dark:text-cyan-400 mt-1.5">WireGuardAdapterProvider</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Kernel wg0 dynamic tunnel management & key rotation</p>
           </div>
 
-          <div className="p-3.5 bg-[#0B0F17] rounded-lg border border-[#222E45]">
+          <div className="p-3.5 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-slate-300">Routing Engine Provider</p>
-              <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+              <p className="font-semibold text-slate-600 dark:text-slate-300">Routing Engine Provider</p>
+              <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-mono font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
                 READY
               </span>
             </div>
-            <p className="font-mono text-cyan-400 mt-1.5">LinuxRoutingProvider</p>
-            <p className="text-[11px] text-slate-400 mt-1">iproute2 dynamic route table prefix injection</p>
+            <p className="font-mono text-cyan-600 dark:text-cyan-400 mt-1.5">LinuxRoutingProvider</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">iproute2 dynamic route table prefix injection</p>
           </div>
         </div>
       </div>
 
       {/* One-Line Edge Agent Installer */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-4">
         <div className="flex items-center gap-2.5">
-          <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
             <Terminal className="w-5 h-5" />
           </span>
           <div>
-            <h2 className="text-sm font-bold text-white">Edge Router Telemetry Agent Installer (.sh)</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Edge Router Telemetry Agent Installer (.sh)</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Execute this command on physical Cisco routers, MikroTik containers, or Linux servers to stream real telemetry.
             </p>
           </div>
         </div>
 
-        <div className="bg-[#0B0F17] p-3 rounded-lg border border-[#222E45] font-mono text-xs text-cyan-300 flex items-center justify-between">
+        <div className="bg-slate-50 dark:bg-[#0B0F17] p-3 rounded-lg border border-slate-200 dark:border-[#222E45] font-mono text-xs text-cyan-300 flex items-center justify-between">
           <span className="select-all">
             curl -sSL http://192.168.2.212:3001/api/v1/network-discovery/agent/install.sh | bash
           </span>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
               setCopied(true);
               setTimeout(() => setCopied(false), 2500);
             }}
-            className="p-1.5 rounded bg-[#162030] hover:bg-[#222E45] text-slate-300 ml-2"
+            className="p-1.5 rounded bg-[#162030] hover:bg-[#222E45] text-slate-600 dark:text-slate-300 ml-2"
             title="Copy command"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -226,12 +226,12 @@ export default function SettingsPage() {
       </div>
 
       {/* Environment Mode Control */}
-      <div className="bg-[#121824] border border-red-500/20 rounded-xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+      <div className="bg-white dark:bg-[#121824] border border-red-500/20 rounded-xl p-6 space-y-4">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Trash2 className="w-4 h-4 text-red-400" />
           Synthetic Demo Data Purge
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Remove synthetic demo seed branches (e.g. Apollo Lucknow, MaxCare Indore, etc.) and run this entire platform exclusively on real enterprise hardware discovered from your network.
         </p>
         <button

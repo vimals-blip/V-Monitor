@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import {
   Search, RefreshCw, Plus, Play, Activity, Power, RotateCw,
   Trash2, X, Check, MapPin, Network, Server, ShieldCheck, AlertCircle,
@@ -72,14 +73,34 @@ export default function SitesPage() {
     status: 'ONLINE',
   });
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['sites-list', search],
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const { data: summary } = useQuery({
+    queryKey: ['dashboard-summary'],
     queryFn: async () => {
-      const res = await apiClient.get('/sites?search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get('/dashboard/summary');
+      return res.data;
     },
     refetchInterval: 5000,
   });
+
+  const { data: siteResponse, isLoading, refetch } = useQuery({
+    queryKey: ['sites-list', search, page, pageSize],
+    queryFn: async () => {
+      const res = await apiClient.get(`/sites?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`);
+      return res.data;
+    },
+    refetchInterval: 5000,
+  });
+
+  const data = Array.isArray(siteResponse?.data)
+    ? siteResponse.data
+    : Array.isArray(siteResponse)
+    ? siteResponse
+    : [];
+  const totalSites = siteResponse?.total ?? (summary?.sites || data.length);
+  const totalPages = siteResponse?.totalPages ?? Math.max(1, Math.ceil(totalSites / pageSize));
 
   const { data: tenants } = useQuery({
     queryKey: ['tenants-dropdown'],
@@ -244,18 +265,18 @@ export default function SitesPage() {
       {/* Breadcrumb & Cisco-Grade Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 mb-1">
             <span>CONTROL PLANE</span>
             <span>/</span>
             <span className="text-cyan-400">SITE INVENTORY & TOPOLOGY</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
               <MapPin className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">Enterprise Branch Sites & SD-WAN Overlay</h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Enterprise Branch Sites & SD-WAN Overlay</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Cisco Catalyst SD-WAN architecture: BFD-monitored dual uplinks (Fiber + Starlink LEO), VRF segmentation, and SLA path steering.
               </p>
             </div>
@@ -265,7 +286,7 @@ export default function SitesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white transition-colors"
             title="Refresh Fleet State"
           >
             <RefreshCw className="w-4 h-4" />
@@ -285,43 +306,43 @@ export default function SitesPage() {
 
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Total Fleet Sites</div>
-          <div className="text-xl font-bold text-white mt-1">{(data || []).length}</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Fleet Sites</div>
+          <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{totalSites}</div>
           <div className="text-[10px] text-slate-500 font-mono mt-0.5">Distributed CPE Routers</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">BFD SLA Compliant</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">BFD SLA Compliant</div>
           <div className="text-xl font-bold text-emerald-400 mt-1">
-            {(data || []).filter((s: any) => s.status === 'ONLINE' || s.status === 'ACTIVE').length} Sites
+            {summary?.onlineSites ?? (data || []).filter((s: any) => s.status === 'ONLINE' || s.status === 'ACTIVE').length} Sites
           </div>
           <div className="text-[10px] text-emerald-500 font-mono mt-0.5">Dual-Path Nominal</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Starlink Failover Active</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Starlink Failover Active</div>
           <div className="text-xl font-bold text-amber-400 mt-1">
-            {(data || []).filter((s: any) => s.status === 'DEGRADED').length} Sites
+            {summary?.degradedSites ?? (data || []).filter((s: any) => s.status === 'DEGRADED').length} Sites
           </div>
           <div className="text-[10px] text-amber-500 font-mono mt-0.5">Fiber Path Degraded</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Active VRF Subnets</div>
-          <div className="text-xl font-bold text-cyan-400 mt-1">
-            {(data || []).length * 3} VRFs
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Active VRF Subnets</div>
+          <div className="text-xl font-bold text-cyan-600 dark:text-cyan-400 mt-1">
+            {totalSites * 3} VRFs
           </div>
           <div className="text-[10px] text-cyan-500 font-mono mt-0.5">Corporate, DMZ, Wi-Fi</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Carrier Aggregate CIR</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Carrier Aggregate CIR</div>
           <div className="text-xl font-bold text-purple-400 mt-1">
-            {((data || []).length * 0.75).toFixed(1)} Gbps
+            {(totalSites * 0.75).toFixed(1)} Gbps
           </div>
           <div className="text-[10px] text-purple-500 font-mono mt-0.5">High-Speed Overlays</div>
         </div>
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {['ALL', 'ONLINE', 'DEGRADED', 'PROVISIONING'].map((tab) => (
             <button
@@ -330,7 +351,7 @@ export default function SitesPage() {
               className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
                 activeTabFilter === tab
                   ? 'bg-cyan-500 text-black'
-                  : 'bg-[#0B0F17] text-slate-400 hover:text-white border border-[#222E45]'
+                  : 'bg-[#0B0F17] text-slate-500 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-[#222E45]'
               }`}
             >
               {tab === 'ALL' ? 'All Sites' : tab === 'ONLINE' ? 'Nominal (BFD UP)' : tab === 'DEGRADED' ? 'Failover Active' : 'Staged / Inactive'}
@@ -344,16 +365,19 @@ export default function SitesPage() {
             type="text"
             placeholder="Search sites by code, name, city, subnet..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#0B0F17] border border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-cyan-500"
           />
         </div>
       </div>
 
       {/* Main High-Density Sites Table */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <tr>
               <th className="p-3.5">Site Architecture & ID</th>
               <th className="p-3.5">Location & Core PoP</th>
@@ -364,7 +388,7 @@ export default function SitesPage() {
               <th className="p-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#222E45] text-slate-300">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300">
             {isLoading ? (
               <tr>
                 <td colSpan={7} className="p-10 text-center text-slate-500">Loading multi-tenant sites from control plane...</td>
@@ -394,10 +418,10 @@ export default function SitesPage() {
                     {/* Site Identity & Code */}
                     <td className="p-3.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                        <span className="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-400 transition-colors">
                           {item.name || 'Branch Site'}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#0B0F17] text-cyan-400 border border-cyan-500/30">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                           {siteCode}
                         </span>
                       </div>
@@ -409,8 +433,8 @@ export default function SitesPage() {
                     </td>
 
                     {/* Location & PoP */}
-                    <td className="p-3.5 text-slate-300">
-                      <div className="font-medium text-white">{item.city || 'Bhopal'}</div>
+                    <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                      <div className="font-medium text-slate-900 dark:text-white">{item.city || 'Bhopal'}</div>
                       <div className="text-[10px] text-slate-500">
                         PoP: {item.popId ? 'Mumbai Core PoP' : 'Default Edge PoP'}
                       </div>
@@ -422,11 +446,11 @@ export default function SitesPage() {
                         <div className="flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${primaryLink.bfdState === 'DEGRADED_FAILOVER' ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
                           <span className="font-mono text-[11px] text-slate-200">{primaryLink.name}</span>
-                          <span className="text-[10px] font-mono text-cyan-400">({primaryLink.cirMbps}M • {primaryLink.latencyMs}ms)</span>
+                          <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400">({primaryLink.cirMbps}M • {primaryLink.latencyMs}ms)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                          <span className="font-mono text-[11px] text-slate-400">{secondaryLink.name}</span>
+                          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{secondaryLink.name}</span>
                           <span className="text-[10px] font-mono text-purple-400">({secondaryLink.cirMbps}M • {secondaryLink.latencyMs}ms)</span>
                         </div>
                       </div>
@@ -434,14 +458,14 @@ export default function SitesPage() {
 
                     {/* LAN VRFs & Subnets */}
                     <td className="p-3.5 font-mono">
-                      <div className="text-cyan-400 text-xs">{item.subnetCidr || '10.100.1.0/24'}</div>
+                      <div className="text-cyan-600 dark:text-cyan-400 text-xs">{item.subnetCidr || '10.100.1.0/24'}</div>
                       <div className="text-[10px] text-slate-500">VRF 10 (Data) • VRF 20 (DMZ)</div>
                     </td>
 
                     {/* Health Score Gauge */}
                     <td className="p-3.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-12 bg-[#0B0F17] h-2 rounded-full overflow-hidden border border-[#222E45]">
+                        <div className="w-12 bg-slate-50 dark:bg-[#0B0F17] h-2 rounded-full overflow-hidden border border-slate-200 dark:border-[#222E45]">
                           <div
                             className={`h-full rounded-full ${healthScore > 90 ? 'bg-emerald-400' : 'bg-amber-400'}`}
                             style={{ width: `${healthScore}%` }}
@@ -463,7 +487,7 @@ export default function SitesPage() {
                           setInspectSite(item);
                           setCockpitTab('transports');
                         }}
-                        className="px-2.5 py-1 rounded bg-[#0B0F17] hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-semibold transition-all inline-flex items-center gap-1.5"
+                        className="px-2.5 py-1 rounded bg-slate-50 dark:bg-[#0B0F17] hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 text-[11px] font-semibold transition-all inline-flex items-center gap-1.5"
                       >
                         <Sliders className="w-3.5 h-3.5" />
                         <span>Inspect 360°</span>
@@ -476,7 +500,7 @@ export default function SitesPage() {
                         <button
                           onClick={() => handleRunDiagnostics(item)}
                           title="Run Automated Ping & Diagnostics"
-                          className="p-1.5 rounded bg-[#1A2333] hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition-colors"
+                          className="p-1.5 rounded bg-[#1A2333] hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 transition-colors"
                         >
                           <Activity className="w-3.5 h-3.5" />
                         </button>
@@ -497,7 +521,7 @@ export default function SitesPage() {
                               actionMutation.mutate({ id: item.id, action: 'delete' });
                             }
                           }}
-                          className="p-1.5 rounded bg-[#1A2333] hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-[#222E45] transition-colors"
+                          className="p-1.5 rounded bg-[#1A2333] hover:bg-red-500/20 text-slate-500 dark:text-slate-400 hover:text-red-400 border border-slate-200 dark:border-[#222E45] transition-colors"
                           title="Delete Site"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -512,47 +536,60 @@ export default function SitesPage() {
         </table>
       </div>
 
+      {/* Sites Fleet Pagination */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalSites}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(sz) => {
+          setPageSize(sz);
+          setPage(1);
+        }}
+      />
+
       {/* ============================================================== */}
       {/* 360° OPERATIONAL SITE COCKPIT SLIDE-OVER DRAWER (CISCO-GRADE) */}
       {/* ============================================================== */}
       {inspectSite && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
-          <div className="bg-[#0B0F17] border-l border-[#222E45] w-full max-w-4xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border-l border-slate-200 dark:border-[#222E45] w-full max-w-4xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="bg-[#121824] px-6 py-4 border-b border-[#222E45] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#121824] px-6 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
                   <MapPin className="w-6 h-6" />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-white">{inspectSite.name}</h2>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0B0F17] text-cyan-400 border border-cyan-500/30">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">{inspectSite.name}</h2>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                       {inspectSite.metadata?.siteCode || 'SITE-105'}
                     </span>
                     <StatusBadge status={inspectSite.status || 'ONLINE'} />
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {inspectSite.city}, {inspectSite.address || 'Enterprise Corridor'} • SLA Score: <span className="text-emerald-400 font-bold">{inspectSite.metadata?.healthScore || 99.8}%</span>
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setInspectSite(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1A2333]"
+                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-[#1A2333]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Cockpit Navigation Tabs */}
-            <div className="bg-[#0D121D] px-6 border-b border-[#222E45] flex items-center gap-6 text-xs font-semibold overflow-x-auto">
+            <div className="bg-slate-50 dark:bg-[#0D121D] px-6 border-b border-slate-200 dark:border-[#222E45] flex items-center gap-6 text-xs font-semibold overflow-x-auto">
               <button
                 onClick={() => setCockpitTab('transports')}
                 className={`py-3 border-b-2 flex items-center gap-1.5 transition-all ${
                   cockpitTab === 'transports'
                     ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-white'
                 }`}
               >
                 <Radio className="w-4 h-4" />
@@ -563,7 +600,7 @@ export default function SitesPage() {
                 className={`py-3 border-b-2 flex items-center gap-1.5 transition-all ${
                   cockpitTab === 'vrfs'
                     ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-white'
                 }`}
               >
                 <Layers className="w-4 h-4" />
@@ -574,7 +611,7 @@ export default function SitesPage() {
                 className={`py-3 border-b-2 flex items-center gap-1.5 transition-all ${
                   cockpitTab === 'hardware'
                     ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-white'
                 }`}
               >
                 <Cpu className="w-4 h-4" />
@@ -585,7 +622,7 @@ export default function SitesPage() {
                 className={`py-3 border-b-2 flex items-center gap-1.5 transition-all ${
                   cockpitTab === 'qos'
                     ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-white'
                 }`}
               >
                 <Sliders className="w-4 h-4" />
@@ -596,7 +633,7 @@ export default function SitesPage() {
                 className={`py-3 border-b-2 flex items-center gap-1.5 transition-all ${
                   cockpitTab === 'diagnostics'
                     ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-white'
                 }`}
               >
                 <Terminal className="w-4 h-4" />
@@ -611,8 +648,8 @@ export default function SitesPage() {
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-white">Active SD-WAN Uplink Interfaces</h3>
-                      <p className="text-xs text-slate-400">Continuous Bidirectional Forwarding Detection (BFD) 1000ms polling</p>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Active SD-WAN Uplink Interfaces</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Continuous Bidirectional Forwarding Detection (BFD) 1000ms polling</p>
                     </div>
                     <span className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-bold">
                       SUB-SECOND FAILOVER ENABLED
@@ -621,30 +658,30 @@ export default function SitesPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Primary Uplink Card */}
-                    <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-3">
+                    <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="font-bold text-white text-xs">Primary Optical Fiber</span>
+                          <span className="font-bold text-slate-900 dark:text-white text-xs">Primary Optical Fiber</span>
                         </div>
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
                           BFD: ESTABLISHED
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">CARRIER / ISP</span>
                           <span className="text-slate-200">Tata Communications</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">CIR SPEED</span>
-                          <span className="text-cyan-400 font-bold">500 Mbps / 500 Mbps</span>
+                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">500 Mbps / 500 Mbps</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">ROUNDTRIP LATENCY</span>
                           <span className="text-emerald-400 font-bold">14.2 ms</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">JITTER / LOSS</span>
                           <span className="text-slate-200">0.8ms / 0.00%</span>
                         </div>
@@ -655,30 +692,30 @@ export default function SitesPage() {
                     </div>
 
                     {/* Secondary Uplink Card (Starlink) */}
-                    <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-3">
+                    <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                          <span className="font-bold text-white text-xs">Secondary Starlink LEO Satellite</span>
+                          <span className="font-bold text-slate-900 dark:text-white text-xs">Secondary Starlink LEO Satellite</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
                           STANDBY: SYNCHRONIZED
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">CARRIER / CONSTELLATION</span>
                           <span className="text-slate-200">Starlink Aviation LEO</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">CIR SPEED</span>
-                          <span className="text-cyan-400 font-bold">250 Mbps / 50 Mbps</span>
+                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">250 Mbps / 50 Mbps</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">SATELLITE LATENCY</span>
-                          <span className="text-cyan-400 font-bold">44.6 ms</span>
+                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">44.6 ms</span>
                         </div>
-                        <div className="p-2.5 bg-[#0B0F17] rounded border border-[#222E45]">
+                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
                           <span className="text-slate-500 block text-[10px]">JITTER / LOSS</span>
                           <span className="text-slate-200">3.2ms / 0.05%</span>
                         </div>
@@ -690,14 +727,14 @@ export default function SitesPage() {
                   </div>
 
                   {/* Real-time Bandwidth Sparkline & Health */}
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Live Path Health & Tunnel Latency (Last 60 Minutes)</h4>
-                    <div className="h-28 bg-[#0B0F17] rounded-lg border border-[#222E45] p-3 flex items-end justify-between gap-1">
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
+                    <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Live Path Health & Tunnel Latency (Last 60 Minutes)</h4>
+                    <div className="h-28 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45] p-3 flex items-end justify-between gap-1">
                       {Array.from({ length: 30 }).map((_, i) => {
                         const h = 25 + Math.sin(i * 0.4) * 15 + Math.random() * 8;
                         return (
                           <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
-                            <div className="w-full h-20 flex items-end bg-[#121824]/40 rounded-t overflow-hidden">
+                            <div className="w-full h-20 flex items-end bg-white dark:bg-[#121824]/40 rounded-t overflow-hidden">
                               <div
                                 className="w-full bg-gradient-to-t from-cyan-600/70 to-cyan-400 rounded-t transition-all"
                                 style={{ height: `${h}%`, minHeight: '4px' }}
@@ -720,8 +757,8 @@ export default function SitesPage() {
               {cockpitTab === 'vrfs' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Multi-Tenant LAN Segments & Virtual Routing (VRF)</h3>
-                    <p className="text-xs text-slate-400">Strict cryptokey isolation between enterprise corporate data, banking DMZ, and guest access</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Multi-Tenant LAN Segments & Virtual Routing (VRF)</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Strict cryptokey isolation between enterprise corporate data, banking DMZ, and guest access</p>
                   </div>
 
                   <div className="space-y-3">
@@ -730,20 +767,20 @@ export default function SitesPage() {
                       { vrfId: 20, name: 'VRF 20: Branch Banking DMZ', cidr: '10.100.2.0/24', vlan: 200, clients: 14, zone: 'PCI_DSS_RESTRICTED', desc: 'PCI-DSS compliant POS terminals, cash recycler ATMs, zero-trust perimeter.' },
                       { vrfId: 50, name: 'VRF 50: Branch Guest Wi-Fi', cidr: '172.16.50.0/24', vlan: 300, clients: 32, zone: 'DIRECT_INTERNET', desc: 'Direct-to-cloud internet offload, isolated from corporate routing tables.' },
                     ].map((vrf) => (
-                      <div key={vrf.vrfId} className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex items-center justify-between">
+                      <div key={vrf.vrfId} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-xs">{vrf.name}</span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0B0F17] text-cyan-400 border border-cyan-500/30">
+                            <span className="font-bold text-slate-900 dark:text-white text-xs">{vrf.name}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                               VLAN {vrf.vlan}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#1C263A] text-slate-300">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-[#1C263A] text-slate-600 dark:text-slate-300">
                               {vrf.zone}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400">{vrf.desc}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{vrf.desc}</p>
                           <div className="text-[11px] font-mono text-slate-500 pt-1">
-                            Allocated Subnet: <span className="text-emerald-400">{vrf.cidr}</span> • Active DHCP Leases: <span className="text-white font-bold">{vrf.clients} Devices</span>
+                            Allocated Subnet: <span className="text-emerald-400">{vrf.cidr}</span> • Active DHCP Leases: <span className="text-slate-900 dark:text-white font-bold">{vrf.clients} Devices</span>
                           </div>
                         </div>
                         <StatusBadge status="ACTIVE" />
@@ -757,36 +794,36 @@ export default function SitesPage() {
               {cockpitTab === 'hardware' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Edge CPE Appliance Telemetry</h3>
-                    <p className="text-xs text-slate-400">On-premise router chassis health, thermal sensors, and WireGuard kernel driver</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Edge CPE Appliance Telemetry</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">On-premise router chassis health, thermal sensors, and WireGuard kernel driver</p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
-                    <div className="p-3.5 bg-[#121824] border border-[#222E45] rounded-xl">
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
                       <span className="text-slate-500 block text-[10px]">ROUTER MODEL</span>
-                      <span className="text-white font-bold text-sm">IntelliEdge-X800</span>
-                      <span className="text-[10px] text-slate-400 block mt-1">Carrier Spec</span>
+                      <span className="text-slate-900 dark:text-white font-bold text-sm">IntelliEdge-X800</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">Carrier Spec</span>
                     </div>
-                    <div className="p-3.5 bg-[#121824] border border-[#222E45] rounded-xl">
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
                       <span className="text-slate-500 block text-[10px]">CHASSIS THERMAL</span>
                       <span className="text-emerald-400 font-bold text-sm">38.5 °C</span>
-                      <span className="text-[10px] text-slate-400 block mt-1">Dual Fans Nominal</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">Dual Fans Nominal</span>
                     </div>
-                    <div className="p-3.5 bg-[#121824] border border-[#222E45] rounded-xl">
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
                       <span className="text-slate-500 block text-[10px]">CPU UTILIZATION</span>
-                      <span className="text-cyan-400 font-bold text-sm">28.4%</span>
-                      <span className="text-[10px] text-slate-400 block mt-1">8 Cores Active</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-bold text-sm">28.4%</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">8 Cores Active</span>
                     </div>
-                    <div className="p-3.5 bg-[#121824] border border-[#222E45] rounded-xl">
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
                       <span className="text-slate-500 block text-[10px]">REDUNDANT PSU</span>
                       <span className="text-emerald-400 font-bold text-sm">DUAL OK</span>
-                      <span className="text-[10px] text-slate-400 block mt-1">PSU1 & PSU2 Ready</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">PSU1 & PSU2 Ready</span>
                     </div>
                   </div>
 
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-2 font-mono text-xs">
-                    <span className="text-slate-400 uppercase text-[10px] font-bold block">Cryptographic Keypair:</span>
-                    <div className="p-3 bg-[#0B0F17] rounded border border-[#222E45] text-emerald-400 text-xs break-all">
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-2 font-mono text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold block">Cryptographic Keypair:</span>
+                    <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45] text-emerald-400 text-xs break-all">
                       Curve25519 Public Key: vMub0w1fPoPAggregatorKeyMumbaiPrimary2026Net=
                     </div>
                     <div className="text-[11px] text-slate-500 pt-1 flex items-center justify-between">
@@ -801,8 +838,8 @@ export default function SitesPage() {
               {cockpitTab === 'qos' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Application-Aware Routing & QoS Classes</h3>
-                    <p className="text-xs text-slate-400">Deep Packet Inspection (DPI) classification with guaranteed latency SLA contracts</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Application-Aware Routing & QoS Classes</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Deep Packet Inspection (DPI) classification with guaranteed latency SLA contracts</p>
                   </div>
 
                   <div className="space-y-3 text-xs">
@@ -812,10 +849,10 @@ export default function SitesPage() {
                       { app: 'Enterprise Cloud SaaS (M365, AWS, Salesforce)', dscp: 'AF21 (DSCP 18)', path: 'Equal-Cost Multipath', reserved: '100 Mbps', latencyTarget: '< 100ms', status: 'COMPLIANT' },
                       { app: 'General Web & Software Updates', dscp: 'Best Effort (0)', path: 'Starlink Egress Offload', reserved: 'Remaining Bandwidth', latencyTarget: 'Best Effort', status: 'COMPLIANT' },
                     ].map((qos, i) => (
-                      <div key={i} className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex items-center justify-between">
+                      <div key={i} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="font-bold text-white text-xs">{qos.app}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">
+                          <div className="font-bold text-slate-900 dark:text-white text-xs">{qos.app}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                             QoS Marking: <span className="text-cyan-400">{qos.dscp}</span> • Steering: <span className="text-slate-300">{qos.path}</span>
                           </div>
                           <div className="text-[11px] text-slate-500 font-mono">
@@ -835,8 +872,8 @@ export default function SitesPage() {
               {cockpitTab === 'diagnostics' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Live Edge Diagnostics & Running Configuration</h3>
-                    <p className="text-xs text-slate-400">Trigger live probes or download generated Linux WireGuard / Cisco IOS-XE configuration</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Live Edge Diagnostics & Running Configuration</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Trigger live probes or download generated Linux WireGuard / Cisco IOS-XE configuration</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -849,19 +886,19 @@ export default function SitesPage() {
                     </button>
                     <button
                       onClick={() => actionMutation.mutate({ id: inspectSite.id, action: 'restart' })}
-                      className="px-3 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white text-xs border border-[#222E45] flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white text-xs border border-slate-200 dark:border-[#222E45] flex items-center gap-1.5"
                     >
                       <RotateCw className="w-3.5 h-3.5 text-purple-400" />
                       Restart Gateway Daemon
                     </button>
                   </div>
 
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-2">
-                    <div className="flex items-center justify-between text-xs text-slate-300 font-semibold">
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-semibold">
                       <span>Production WireGuard Configuration (/etc/wireguard/wg0.conf)</span>
                       <span className="text-slate-500 font-mono text-[10px]">Autogenerated by Intellilink NOG</span>
                     </div>
-                    <pre className="p-3 bg-[#05080E] border border-[#222E45] rounded-lg text-slate-300 font-mono text-[10px] overflow-x-auto max-h-56">
+                    <pre className="p-3 bg-[#05080E] border border-slate-200 dark:border-[#222E45] rounded-lg text-slate-600 dark:text-slate-300 font-mono text-[10px] overflow-x-auto max-h-56">
 {`# Intellilink NOG Enterprise Site Profile
 # Site ID: ${inspectSite.id}
 # Code: ${inspectSite.metadata?.siteCode || 'SITE-105'}
@@ -885,11 +922,11 @@ PersistentKeepalive = 25`}
             </div>
 
             {/* Drawer Footer */}
-            <div className="bg-[#121824] px-6 py-3 border-t border-[#222E45] flex justify-between items-center text-xs">
+            <div className="bg-white dark:bg-[#121824] px-6 py-3 border-t border-slate-200 dark:border-[#222E45] flex justify-between items-center text-xs">
               <span className="text-slate-500 font-mono">Control Plane Node: Connected to MySQL</span>
               <button
                 onClick={() => setInspectSite(null)}
-                className="px-4 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white font-medium"
+                className="px-4 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
               >
                 Close Cockpit
               </button>
@@ -903,29 +940,29 @@ PersistentKeepalive = 25`}
       {/* ============================================================== */}
       {wizardOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             {/* Wizard Header */}
-            <div className="bg-[#121824] px-6 py-4 border-b border-[#222E45] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#121824] px-6 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
+                  <span className="p-1 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                     <Plus className="w-4 h-4" />
                   </span>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Enterprise Branch Site Provisioning Wizard
                   </h2>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   Step {wizardStep} of 5: {wizardStep === 1 ? 'Site Identity & Topology' : wizardStep === 2 ? 'Geographic Placement & ISP PoP' : wizardStep === 3 ? 'Dual WAN Transport Uplinks' : wizardStep === 4 ? 'LAN VRFs & Segment Subnets' : 'Hardware CPE & Review'}
                 </p>
               </div>
-              <button onClick={() => setWizardOpen(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setWizardOpen(false)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Stepper Progress Bar */}
-            <div className="bg-[#0D121D] px-6 py-2.5 border-b border-[#222E45] flex items-center justify-between text-[11px] font-mono">
+            <div className="bg-slate-50 dark:bg-[#0D121D] px-6 py-2.5 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between text-[11px] font-mono">
               {[
                 { step: 1, title: '1. Identity' },
                 { step: 2, title: '2. Location' },
@@ -959,35 +996,35 @@ PersistentKeepalive = 25`}
               {wizardStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Branch Site Full Name *</label>
+                    <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Branch Site Full Name *</label>
                     <input
                       required
                       type="text"
                       placeholder="e.g. State Bank of India - Bhopal Main Commercial Branch"
                       value={wizardData.name}
                       onChange={(e) => setWizardData({ ...wizardData, name: e.target.value })}
-                      className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Site Identification Code *</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Site Identification Code *</label>
                       <input
                         required
                         type="text"
                         placeholder="SITE-BHO-105"
                         value={wizardData.siteCode}
                         onChange={(e) => setWizardData({ ...wizardData, siteCode: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-cyan-400 font-mono focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-cyan-600 dark:text-cyan-400 font-mono focus:outline-none focus:border-cyan-500 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Assigned Tenant Organization *</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Assigned Tenant Organization *</label>
                       <select
                         value={wizardData.tenantId}
                         onChange={(e) => setWizardData({ ...wizardData, tenantId: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       >
                         {(tenants || []).map((t: any) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
@@ -998,11 +1035,11 @@ PersistentKeepalive = 25`}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Site Operational Tier</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Site Operational Tier</label>
                       <select
                         value={wizardData.tier}
                         onChange={(e) => setWizardData({ ...wizardData, tier: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       >
                         <option value="Tier-1 Critical Branch">Tier-1 Critical Branch (99.99% SLA)</option>
                         <option value="Regional Operations Hub">Regional Operations Hub</option>
@@ -1011,11 +1048,11 @@ PersistentKeepalive = 25`}
                       </select>
                     </div>
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">High-Availability Topology</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">High-Availability Topology</label>
                       <select
                         value={wizardData.topology}
                         onChange={(e) => setWizardData({ ...wizardData, topology: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       >
                         <option value="Dual-CPE Active/Standby (VRRP)">Dual-CPE Active/Standby (VRRP)</option>
                         <option value="Dual-CPE Active/Active (ECMP)">Dual-CPE Active/Active (ECMP)</option>
@@ -1031,46 +1068,46 @@ PersistentKeepalive = 25`}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">City / Region *</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">City / Region *</label>
                       <input
                         required
                         type="text"
                         placeholder="e.g. Bhopal"
                         value={wizardData.city}
                         onChange={(e) => setWizardData({ ...wizardData, city: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">State / Province</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">State / Province</label>
                       <input
                         type="text"
                         placeholder="Madhya Pradesh"
                         value={wizardData.state}
                         onChange={(e) => setWizardData({ ...wizardData, state: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Street / Data Center Facility Address</label>
+                    <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Street / Data Center Facility Address</label>
                     <input
                       type="text"
                       placeholder="Plot 42, Tech Park, Outer Ring Road"
                       value={wizardData.address}
                       onChange={(e) => setWizardData({ ...wizardData, address: e.target.value })}
-                      className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Assigned ISP Governance PoP *</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Assigned ISP Governance PoP *</label>
                       <select
                         value={wizardData.popId}
                         onChange={(e) => setWizardData({ ...wizardData, popId: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 text-xs"
                       >
                         {(pops || []).map((p: any) => (
                           <option key={p.id} value={p.id}>{p.name} ({p.city})</option>
@@ -1078,21 +1115,21 @@ PersistentKeepalive = 25`}
                       </select>
                     </div>
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">GPS Coordinates (Lat / Long)</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">GPS Coordinates (Lat / Long)</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         <input
                           type="number"
                           step="0.0001"
                           value={wizardData.latitude}
                           onChange={(e) => setWizardData({ ...wizardData, latitude: parseFloat(e.target.value) })}
-                          className="bg-[#121824] border border-[#222E45] rounded-lg px-2 py-2 text-white font-mono text-[11px]"
+                          className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-2 py-2 text-slate-900 dark:text-white font-mono text-[11px]"
                         />
                         <input
                           type="number"
                           step="0.0001"
                           value={wizardData.longitude}
                           onChange={(e) => setWizardData({ ...wizardData, longitude: parseFloat(e.target.value) })}
-                          className="bg-[#121824] border border-[#222E45] rounded-lg px-2 py-2 text-white font-mono text-[11px]"
+                          className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-2 py-2 text-slate-900 dark:text-white font-mono text-[11px]"
                         />
                       </div>
                     </div>
@@ -1103,14 +1140,14 @@ PersistentKeepalive = 25`}
               {/* STEP 3: WAN UPLINKS */}
               {wizardStep === 3 && (
                 <div className="space-y-4">
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3.5 space-y-3">
-                    <span className="font-bold text-white text-xs uppercase flex items-center gap-1.5">
-                      <Radio className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3.5 space-y-3">
+                    <span className="font-bold text-slate-900 dark:text-white text-xs uppercase flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                       Primary WAN Transport (Optical Fiber)
                     </span>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">CARRIER NAME</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">CARRIER NAME</label>
                         <input
                           type="text"
                           value={wizardData.primaryUplink.carrier}
@@ -1118,11 +1155,11 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             primaryUplink: { ...wizardData.primaryUplink, carrier: e.target.value }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-white text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-slate-900 dark:text-white text-xs"
                         />
                       </div>
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">CIR SPEED (MBPS)</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">CIR SPEED (MBPS)</label>
                         <input
                           type="number"
                           value={wizardData.primaryUplink.cirMbps}
@@ -1130,11 +1167,11 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             primaryUplink: { ...wizardData.primaryUplink, cirMbps: parseInt(e.target.value, 10) }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-cyan-400 font-mono text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-cyan-600 dark:text-cyan-400 font-mono text-xs"
                         />
                       </div>
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">INTERFACE</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">INTERFACE</label>
                         <input
                           type="text"
                           value={wizardData.primaryUplink.interface}
@@ -1142,20 +1179,20 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             primaryUplink: { ...wizardData.primaryUplink, interface: e.target.value }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-purple-400 font-mono text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-purple-400 font-mono text-xs"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3.5 space-y-3">
-                    <span className="font-bold text-white text-xs uppercase flex items-center gap-1.5">
-                      <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3.5 space-y-3">
+                    <span className="font-bold text-slate-900 dark:text-white text-xs uppercase flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                       Secondary WAN Transport (Starlink Satellite LEO)
                     </span>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">CARRIER NAME</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">CARRIER NAME</label>
                         <input
                           type="text"
                           value={wizardData.secondaryUplink.carrier}
@@ -1163,11 +1200,11 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             secondaryUplink: { ...wizardData.secondaryUplink, carrier: e.target.value }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-white text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-slate-900 dark:text-white text-xs"
                         />
                       </div>
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">CIR SPEED (MBPS)</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">CIR SPEED (MBPS)</label>
                         <input
                           type="number"
                           value={wizardData.secondaryUplink.cirMbps}
@@ -1175,11 +1212,11 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             secondaryUplink: { ...wizardData.secondaryUplink, cirMbps: parseInt(e.target.value, 10) }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-cyan-400 font-mono text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-cyan-600 dark:text-cyan-400 font-mono text-xs"
                         />
                       </div>
                       <div>
-                        <label className="text-slate-400 block text-[10px] mb-1">INTERFACE</label>
+                        <label className="text-slate-500 dark:text-slate-400 block text-[10px] mb-1">INTERFACE</label>
                         <input
                           type="text"
                           value={wizardData.secondaryUplink.interface}
@@ -1187,7 +1224,7 @@ PersistentKeepalive = 25`}
                             ...wizardData,
                             secondaryUplink: { ...wizardData.secondaryUplink, interface: e.target.value }
                           })}
-                          className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-2.5 py-1.5 text-purple-400 font-mono text-xs"
+                          className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-2.5 py-1.5 text-purple-400 font-mono text-xs"
                         />
                       </div>
                     </div>
@@ -1198,39 +1235,39 @@ PersistentKeepalive = 25`}
               {/* STEP 4: LAN VRFS & SEGMENTS */}
               {wizardStep === 4 && (
                 <div className="space-y-4">
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3.5 space-y-2">
-                    <span className="font-bold text-white text-xs uppercase block">VRF 10: Corporate Enterprise LAN CIDR *</span>
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3.5 space-y-2">
+                    <span className="font-bold text-slate-900 dark:text-white text-xs uppercase block">VRF 10: Corporate Enterprise LAN CIDR *</span>
                     <input
                       required
                       type="text"
                       placeholder="10.150.1.0/24"
                       value={wizardData.subnetCidr}
                       onChange={(e) => setWizardData({ ...wizardData, subnetCidr: e.target.value })}
-                      className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-3 py-2 text-cyan-400 font-mono text-xs"
+                      className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-3 py-2 text-cyan-600 dark:text-cyan-400 font-mono text-xs"
                     />
                     <p className="text-[10px] text-slate-500">Allocated to employee workstations, VOIP phones, and core servers.</p>
                   </div>
 
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3.5 space-y-2">
-                    <span className="font-bold text-white text-xs uppercase block">VRF 20: Branch Banking DMZ / POS Subnet</span>
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3.5 space-y-2">
+                    <span className="font-bold text-slate-900 dark:text-white text-xs uppercase block">VRF 20: Branch Banking DMZ / POS Subnet</span>
                     <input
                       type="text"
                       placeholder="10.150.2.0/24"
                       value={wizardData.bankingDmzSubnet}
                       onChange={(e) => setWizardData({ ...wizardData, bankingDmzSubnet: e.target.value })}
-                      className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-3 py-2 text-emerald-400 font-mono text-xs"
+                      className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-3 py-2 text-emerald-400 font-mono text-xs"
                     />
                     <p className="text-[10px] text-slate-500">PCI-DSS isolated network segment for cash dispensers & ATM transactions.</p>
                   </div>
 
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3.5 space-y-2">
-                    <span className="font-bold text-white text-xs uppercase block">VRF 50: Guest Wi-Fi Network Subnet</span>
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3.5 space-y-2">
+                    <span className="font-bold text-slate-900 dark:text-white text-xs uppercase block">VRF 50: Guest Wi-Fi Network Subnet</span>
                     <input
                       type="text"
                       placeholder="172.16.150.0/24"
                       value={wizardData.guestWifiSubnet}
                       onChange={(e) => setWizardData({ ...wizardData, guestWifiSubnet: e.target.value })}
-                      className="w-full bg-[#0B0F17] border border-[#222E45] rounded px-3 py-2 text-purple-400 font-mono text-xs"
+                      className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded px-3 py-2 text-purple-400 font-mono text-xs"
                     />
                     <p className="text-[10px] text-slate-500">Direct internet break-out; strictly isolated from corporate and banking traffic.</p>
                   </div>
@@ -1242,31 +1279,31 @@ PersistentKeepalive = 25`}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Edge CPE Hardware Model</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Edge CPE Hardware Model</label>
                       <input
                         type="text"
                         value={wizardData.hardwareModel}
                         onChange={(e) => setWizardData({ ...wizardData, hardwareModel: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded px-3 py-2 text-white text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded px-3 py-2 text-slate-900 dark:text-white text-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 font-semibold block mb-1">Appliance Chassis Serial Number</label>
+                      <label className="text-slate-600 dark:text-slate-300 font-semibold block mb-1">Appliance Chassis Serial Number</label>
                       <input
                         type="text"
                         value={wizardData.serialNumber}
                         onChange={(e) => setWizardData({ ...wizardData, serialNumber: e.target.value })}
-                        className="w-full bg-[#121824] border border-[#222E45] rounded px-3 py-2 text-cyan-400 font-mono text-xs"
+                        className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded px-3 py-2 text-cyan-600 dark:text-cyan-400 font-mono text-xs"
                       />
                     </div>
                   </div>
 
                   {/* Review Summary Card */}
-                  <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-2 text-xs">
-                    <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">Deployment Pre-Flight Review:</span>
+                  <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-2 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold block mb-1">Deployment Pre-Flight Review:</span>
                     <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                      <div>Site Name: <span className="text-white font-bold">{wizardData.name || 'Bhopal Main Branch'}</span></div>
-                      <div>Site Code: <span className="text-cyan-400 font-bold">{wizardData.siteCode}</span></div>
+                      <div>Site Name: <span className="text-slate-900 dark:text-white font-bold">{wizardData.name || 'Bhopal Main Branch'}</span></div>
+                      <div>Site Code: <span className="text-cyan-600 dark:text-cyan-400 font-bold">{wizardData.siteCode}</span></div>
                       <div>Primary WAN: <span className="text-emerald-400">{wizardData.primaryUplink.carrier} ({wizardData.primaryUplink.cirMbps}M)</span></div>
                       <div>Backup WAN: <span className="text-cyan-400">{wizardData.secondaryUplink.carrier} ({wizardData.secondaryUplink.cirMbps}M)</span></div>
                       <div>Corporate VRF: <span className="text-purple-400">{wizardData.subnetCidr}</span></div>
@@ -1284,11 +1321,11 @@ PersistentKeepalive = 25`}
             </div>
 
             {/* Wizard Navigation Footer */}
-            <div className="bg-[#121824] px-6 py-4 border-t border-[#222E45] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#121824] px-6 py-4 border-t border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setWizardOpen(false)}
-                className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
+                className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white text-xs font-medium"
               >
                 Cancel
               </button>
@@ -1298,7 +1335,7 @@ PersistentKeepalive = 25`}
                   <button
                     type="button"
                     onClick={() => setWizardStep(wizardStep - 1)}
-                    className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-semibold flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white text-xs font-semibold flex items-center gap-1.5"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     Back
@@ -1339,17 +1376,17 @@ PersistentKeepalive = 25`}
       {/* Diagnostics Modal */}
       {diagModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-1 rounded bg-cyan-500/20 text-cyan-400">
+                <span className="p-1 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                   <Activity className="w-4 h-4" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Site Diagnostics Probe: {diagModal.site?.name}
                 </span>
               </div>
-              <button onClick={() => setDiagModal(null)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setDiagModal(null)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1357,31 +1394,31 @@ PersistentKeepalive = 25`}
             <div className="p-5 space-y-3 font-mono text-xs">
               {diagModal.loading ? (
                 <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-slate-300 font-semibold">Probing branch edge gateway...</p>
+                  <RefreshCw className="w-8 h-8 text-cyan-600 dark:text-cyan-400 animate-spin" />
+                  <p className="text-slate-600 dark:text-slate-300 font-semibold">Probing branch edge gateway...</p>
                   <p className="text-slate-500 text-[11px]">Executing ICMP echo and WireGuard tunnel keepalive verify.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">WAN REACHABILITY</span>
+                    <div className="p-3 bg-white dark:bg-[#121824] rounded border border-slate-200 dark:border-[#222E45]">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">WAN REACHABILITY</span>
                       <span className="text-emerald-400 font-bold">{diagModal.result?.wanReachability || 'PASSED'}</span>
                     </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">TUNNEL HANDSHAKE</span>
+                    <div className="p-3 bg-white dark:bg-[#121824] rounded border border-slate-200 dark:border-[#222E45]">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">TUNNEL HANDSHAKE</span>
                       <span className="text-emerald-400 font-bold">{diagModal.result?.tunnelHandshake || 'PASSED'}</span>
                     </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">AVERAGE RTT LATENCY</span>
-                      <span className="text-cyan-400 font-bold">{diagModal.result?.averageRttMs || '18.4'} ms</span>
+                    <div className="p-3 bg-white dark:bg-[#121824] rounded border border-slate-200 dark:border-[#222E45]">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">AVERAGE RTT LATENCY</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-bold">{diagModal.result?.averageRttMs || '18.4'} ms</span>
                     </div>
-                    <div className="p-3 bg-[#121824] rounded border border-[#222E45]">
-                      <span className="text-slate-400 block text-[10px]">HEALTH EVALUATION</span>
+                    <div className="p-3 bg-white dark:bg-[#121824] rounded border border-slate-200 dark:border-[#222E45]">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">HEALTH EVALUATION</span>
                       <span className="text-emerald-400 font-bold">{diagModal.result?.status || 'HEALTHY'}</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-[#05080E] rounded border border-[#222E45] text-slate-400 text-[11px]">
+                  <div className="p-3 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 text-[11px]">
                     ✓ ICMP 64 bytes to default edge router 10.250.1.1: rtt min/avg/max = 14.2/18.4/22.1 ms<br />
                     ✓ WireGuard cryptokey routing table synchronized.<br />
                     ✓ Zero packet drop recorded across last 50 probe packets.
@@ -1390,10 +1427,10 @@ PersistentKeepalive = 25`}
               )}
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-t border-slate-200 dark:border-[#222E45] flex justify-end">
               <button
                 onClick={() => setDiagModal(null)}
-                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
+                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white text-xs font-medium"
               >
                 Close
               </button>

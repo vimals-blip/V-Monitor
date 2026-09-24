@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import {
   Bell, AlertTriangle, ShieldAlert, CheckCircle2,
   RefreshCw, Search, Check, X, Filter, Plus, ArrowUpRight
@@ -15,20 +16,30 @@ export default function AlertsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const notify = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['alerts-list', search],
+  const { data: alertResponse, isLoading, refetch } = useQuery({
+    queryKey: ['alerts-list', search, page, pageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/alerts?pageSize=50&search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/alerts?pageSize=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`);
+      return res.data;
     },
     refetchInterval: 5000,
   });
+
+  const data = Array.isArray(alertResponse?.data)
+    ? alertResponse.data
+    : Array.isArray(alertResponse)
+    ? alertResponse
+    : [];
+  const totalAlerts = alertResponse?.total ?? data.length;
+  const totalPages = alertResponse?.totalPages ?? Math.max(1, Math.ceil(totalAlerts / pageSize));
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -94,9 +105,9 @@ export default function AlertsPage() {
             <span className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <Bell className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Carrier NOC Alerts & Alarms</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Carrier NOC Alerts & Alarms</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Real-time multi-tenant telemetry threshold breaches, BFD session degradations, and carrier circuit failures.
           </p>
         </div>
@@ -105,7 +116,7 @@ export default function AlertsPage() {
           <button
             onClick={() => liveAuditMutation.mutate()}
             disabled={liveAuditMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-900/30 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-900 dark:text-white text-xs font-semibold shadow-lg shadow-cyan-900/30 transition-all disabled:opacity-50"
             title="Probe all physical devices and audit live alarms"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${liveAuditMutation.isPending ? 'animate-spin' : ''}`} />
@@ -115,7 +126,7 @@ export default function AlertsPage() {
           <button
             onClick={() => purgeMockMutation.mutate()}
             disabled={purgeMockMutation.isPending}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#162032] hover:bg-[#1B2940] border border-[#222E45] text-slate-300 hover:text-white text-xs font-medium disabled:opacity-50"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#162032] hover:bg-[#1B2940] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white text-xs font-medium disabled:opacity-50"
             title="Purge all synthetic alerts"
           >
             <span>Purge Stale</span>
@@ -123,7 +134,7 @@ export default function AlertsPage() {
 
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
@@ -133,30 +144,30 @@ export default function AlertsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <span className="text-[11px] text-slate-400 block font-semibold">TOTAL ACTIVE ALARMS</span>
-          <span className="text-2xl font-bold text-white font-mono">{data?.length || 0}</span>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-semibold">TOTAL ACTIVE ALARMS</span>
+          <span className="text-2xl font-bold text-slate-900 dark:text-white font-mono">{totalAlerts}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Across all enterprise tenants</span>
         </div>
-        <div className="bg-[#121824] border border-rose-500/30 rounded-xl p-4">
+        <div className="bg-white dark:bg-[#121824] border border-rose-500/30 rounded-xl p-4">
           <span className="text-[11px] text-rose-400 block font-semibold">CRITICAL SEVERITY</span>
           <span className="text-2xl font-bold text-rose-400 font-mono">{criticalCount}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Immediate action required</span>
         </div>
-        <div className="bg-[#121824] border border-amber-500/30 rounded-xl p-4">
+        <div className="bg-white dark:bg-[#121824] border border-amber-500/30 rounded-xl p-4">
           <span className="text-[11px] text-amber-400 block font-semibold">HIGH SEVERITY</span>
           <span className="text-2xl font-bold text-amber-400 font-mono">{highCount}</span>
           <span className="text-[11px] text-slate-500 block mt-1">SLA violation risk</span>
         </div>
-        <div className="bg-[#121824] border border-cyan-500/30 rounded-xl p-4">
-          <span className="text-[11px] text-cyan-400 block font-semibold">UNACKNOWLEDGED</span>
-          <span className="text-2xl font-bold text-cyan-400 font-mono">{openCount}</span>
+        <div className="bg-white dark:bg-[#121824] border border-cyan-500/30 rounded-xl p-4">
+          <span className="text-[11px] text-cyan-600 dark:text-cyan-400 block font-semibold">UNACKNOWLEDGED</span>
+          <span className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 font-mono">{openCount}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Pending NOC review</span>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3 flex-1 min-w-[280px]">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -164,13 +175,16 @@ export default function AlertsPage() {
               type="text"
               placeholder="Search by alarm title, resource, or site..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#0B0F17] border border-[#222E45] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-cyan-500"
             />
           </div>
 
           {/* Severity Filter */}
-          <div className="flex items-center gap-1 bg-[#0B0F17] p-1 rounded-lg border border-[#222E45]">
+          <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0B0F17] p-1 rounded-lg border border-slate-200 dark:border-[#222E45]">
             {['ALL', 'CRITICAL', 'HIGH', 'WARNING', 'INFO'].map((sev) => (
               <button
                 key={sev}
@@ -188,14 +202,14 @@ export default function AlertsPage() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-1 bg-[#0B0F17] p-1 rounded-lg border border-[#222E45]">
+        <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0B0F17] p-1 rounded-lg border border-slate-200 dark:border-[#222E45]">
           {['ALL', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
                 statusFilter === st
-                  ? 'bg-slate-700 text-white font-semibold'
+                  ? 'bg-slate-700 text-slate-900 dark:text-white font-semibold'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -206,9 +220,9 @@ export default function AlertsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl overflow-hidden text-xs">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden text-xs">
         <table className="w-full text-left">
-          <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <tr>
               <th className="p-3.5">Severity</th>
               <th className="p-3.5">Alarm Title</th>
@@ -219,7 +233,7 @@ export default function AlertsPage() {
               <th className="p-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#222E45] text-slate-300">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300">
             {isLoading ? (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-slate-500 font-mono">
@@ -246,19 +260,19 @@ export default function AlertsPage() {
                             ? 'bg-rose-950/60 text-rose-400 border-rose-800'
                             : isHigh
                             ? 'bg-amber-950/60 text-amber-400 border-amber-800'
-                            : 'bg-cyan-950/60 text-cyan-400 border-cyan-800'
+                            : 'bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border-cyan-800'
                         }`}
                       >
                         {alert.severity || 'WARNING'}
                       </span>
                     </td>
-                    <td className="p-3.5 font-medium text-white max-w-xs truncate">
+                    <td className="p-3.5 font-medium text-slate-900 dark:text-white max-w-xs truncate">
                       {alert.title || alert.name || 'Telemetry Event'}
                     </td>
-                    <td className="p-3.5 font-mono text-cyan-400">
+                    <td className="p-3.5 font-mono text-cyan-600 dark:text-cyan-400">
                       {alert.resourceName || alert.resourceType || 'Physical Node'}
                     </td>
-                    <td className="p-3.5 font-mono text-slate-400">
+                    <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400">
                       {alert.metricName ? (
                         <span>
                           {alert.metricName}: <span className="text-amber-300 font-bold">{alert.metricValue != null ? alert.metricValue : '—'}</span> (Limit {alert.threshold != null ? alert.threshold : '—'})
@@ -270,7 +284,7 @@ export default function AlertsPage() {
                     <td className="p-3.5">
                       <StatusBadge status={alert.status || 'OPEN'} />
                     </td>
-                    <td className="p-3.5 text-slate-400 text-[11px] font-mono">
+                    <td className="p-3.5 text-slate-500 dark:text-slate-400 text-[11px] font-mono">
                       {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : '—'}
                     </td>
                     <td className="p-3.5 text-right">
@@ -278,7 +292,7 @@ export default function AlertsPage() {
                         {alert.status === 'OPEN' && (
                           <button
                             onClick={() => updateMutation.mutate({ id: alert.id, status: 'ACKNOWLEDGED' })}
-                            className="px-2 py-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-300 hover:text-white text-[11px] font-medium"
+                            className="px-2 py-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white text-[11px] font-medium"
                           >
                             Ack
                           </button>
@@ -293,7 +307,7 @@ export default function AlertsPage() {
                         )}
                         <button
                           onClick={() => setSelectedAlert(alert)}
-                          className="px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-medium"
+                          className="px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[11px] font-medium"
                         >
                           Details
                         </button>
@@ -307,54 +321,67 @@ export default function AlertsPage() {
         </table>
       </div>
 
+      {/* Alerts Pagination */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalAlerts}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(sz) => {
+          setPageSize(sz);
+          setPage(1);
+        }}
+      />
+
       {/* Alert Detail Modal */}
       {selectedAlert && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   NOC Alarm Telemetry Details
                 </span>
               </div>
-              <button onClick={() => setSelectedAlert(null)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setSelectedAlert(null)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-3 font-mono text-xs">
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45] space-y-1">
-                <span className="text-slate-400 block text-[10px]">ALARM TITLE</span>
-                <span className="text-white font-bold text-sm block">{selectedAlert.title || selectedAlert.name}</span>
-                <span className="text-slate-400 text-[11px] block mt-1">{selectedAlert.description || 'Continuous telemetry stream reported threshold deviation.'}</span>
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45] space-y-1">
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">ALARM TITLE</span>
+                <span className="text-slate-900 dark:text-white font-bold text-sm block">{selectedAlert.title || selectedAlert.name}</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] block mt-1">{selectedAlert.description || 'Continuous telemetry stream reported threshold deviation.'}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-[#05080E] rounded border border-[#222E45]">
-                  <span className="text-slate-400 block text-[10px]">SEVERITY</span>
+                <div className="p-2.5 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45]">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px]">SEVERITY</span>
                   <span className="text-rose-400 font-bold">{selectedAlert.severity || 'WARNING'}</span>
                 </div>
-                <div className="p-2.5 bg-[#05080E] rounded border border-[#222E45]">
-                  <span className="text-slate-400 block text-[10px]">STATUS</span>
+                <div className="p-2.5 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45]">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px]">STATUS</span>
                   <span className="text-emerald-400 font-bold">{selectedAlert.status}</span>
                 </div>
-                <div className="p-2.5 bg-[#05080E] rounded border border-[#222E45]">
-                  <span className="text-slate-400 block text-[10px]">TARGET RESOURCE</span>
-                  <span className="text-cyan-400 font-bold truncate block">{selectedAlert.resourceName || selectedAlert.resourceType}</span>
+                <div className="p-2.5 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45]">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px]">TARGET RESOURCE</span>
+                  <span className="text-cyan-600 dark:text-cyan-400 font-bold truncate block">{selectedAlert.resourceName || selectedAlert.resourceType}</span>
                 </div>
-                <div className="p-2.5 bg-[#05080E] rounded border border-[#222E45]">
-                  <span className="text-slate-400 block text-[10px]">TIMESTAMP</span>
-                  <span className="text-slate-300 font-bold text-[10px]">{new Date(selectedAlert.createdAt).toLocaleString()}</span>
+                <div className="p-2.5 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45]">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px]">TIMESTAMP</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-bold text-[10px]">{new Date(selectedAlert.createdAt).toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-t border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               {selectedAlert.status !== 'RESOLVED' ? (
                 <button
                   onClick={() => updateMutation.mutate({ id: selectedAlert.id, status: 'RESOLVED' })}
-                  className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
+                  className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-slate-900 dark:text-white font-semibold text-xs"
                 >
                   Mark as Resolved
                 </button>
@@ -363,7 +390,7 @@ export default function AlertsPage() {
               )}
               <button
                 onClick={() => setSelectedAlert(null)}
-                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-white text-xs font-medium"
+                className="px-4 py-1.5 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white text-xs font-medium"
               >
                 Close
               </button>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import {
   Zap, Play, ShieldAlert, CheckCircle2, Clock, Terminal,
   RefreshCw, Plus, ArrowRight, Activity, Cpu, Sliders,
@@ -29,30 +30,41 @@ export default function AutomationWorkflowsPage() {
     actionType: 'SWAP_CIRCUIT_PRIORITY',
   });
 
+  const [rulePage, setRulePage] = useState(1);
+  const [rulePageSize, setRulePageSize] = useState(10);
+  const [runPage, setRunPage] = useState(1);
+  const [runPageSize, setRunPageSize] = useState(10);
+
   const notify = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 4000);
   };
 
   // Fetch real rules from MySQL
-  const { data: rules, isLoading: loadingRules, refetch: refetchRules } = useQuery({
-    queryKey: ['automation-rules', search],
+  const { data: rulesRes, isLoading: loadingRules, refetch: refetchRules } = useQuery({
+    queryKey: ['automation-rules', search, rulePage, rulePageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/automation?search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/automation?search=${search}&page=${rulePage}&pageSize=${rulePageSize}`);
+      return res.data;
     },
     refetchInterval: 6000,
   });
 
+  const rules = rulesRes?.data || (Array.isArray(rulesRes) ? rulesRes : []);
+  const totalRules = rulesRes?.total ?? rules.length;
+
   // Fetch real historical runs from MySQL
-  const { data: runs, isLoading: loadingRuns, refetch: refetchRuns } = useQuery({
-    queryKey: ['automation-runs'],
+  const { data: runsRes, isLoading: loadingRuns, refetch: refetchRuns } = useQuery({
+    queryKey: ['automation-runs', runPage, runPageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/automation/runs?pageSize=25');
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/automation/runs?page=${runPage}&pageSize=${runPageSize}`);
+      return res.data;
     },
     refetchInterval: 5000,
   });
+
+  const runs = runsRes?.data || (Array.isArray(runsRes) ? runsRes : []);
+  const totalRuns = runsRes?.total ?? runs.length;
 
   // Execute Rule Mutation
   const triggerMutation = useMutation({
@@ -139,12 +151,12 @@ export default function AutomationWorkflowsPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="p-1.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
               <Zap className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Autonomous SD-WAN Orchestration & Self-Healing</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Autonomous SD-WAN Orchestration & Self-Healing</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Real-time event-driven policy automation, sub-second BFD dynamic path steering, ZTP edge onboarding, and SecOps quarantine.
           </p>
         </div>
@@ -155,7 +167,7 @@ export default function AutomationWorkflowsPage() {
               refetchRules();
               refetchRuns();
             }}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white"
             title="Refresh Control Plane"
           >
             <RefreshCw className="w-4 h-4" />
@@ -172,53 +184,53 @@ export default function AutomationWorkflowsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>ACTIVE POLICIES</span>
-            <Layers className="w-4 h-4 text-cyan-400" />
+            <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
           </div>
-          <div className="text-2xl font-bold text-white font-mono">
+          <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
             {rules?.filter((r: any) => r.status === 'ACTIVE').length || 5}
           </div>
-          <span className="text-[11px] text-slate-400">Deterministic Fabric Rules</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Deterministic Fabric Rules</span>
         </div>
 
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>AUTOMATION RUNS</span>
             <Activity className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-emerald-400 font-mono">
             {runs?.length || 0}
           </div>
-          <span className="text-[11px] text-slate-400">Total self-healing events</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Total self-healing events</span>
         </div>
 
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>MEAN FAILOVER TIME</span>
             <Clock className="w-4 h-4 text-purple-400" />
           </div>
           <div className="text-2xl font-bold text-purple-400 font-mono">
             42 ms
           </div>
-          <span className="text-[11px] text-slate-400">Sub-second BFD steering</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Sub-second BFD steering</span>
         </div>
 
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>ENGINE STATUS</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </div>
           <div className="text-sm font-bold text-emerald-300 font-mono mt-1">
             EVENT_DRIVEN
           </div>
-          <span className="text-[11px] text-slate-400">Telemetry Daemon Synced</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Telemetry Daemon Synced</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center border-b border-[#222E45] gap-4 text-xs font-medium">
+      <div className="flex items-center border-b border-slate-200 dark:border-[#222E45] gap-4 text-xs font-medium">
         <button
           onClick={() => setActiveTab('playbooks')}
           className={`pb-3 transition-colors flex items-center gap-2 ${
@@ -263,11 +275,11 @@ export default function AutomationWorkflowsPage() {
           <div className="grid grid-cols-1 gap-4">
             {loadingRules ? (
               <div className="p-12 text-center text-slate-500 font-mono text-xs">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600 dark:text-cyan-400" />
                 Loading Cisco SD-WAN automation workflows from MySQL...
               </div>
             ) : (rules || []).length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-[#121824] rounded-xl border border-[#222E45]">
+              <div className="p-12 text-center text-slate-500 bg-white dark:bg-[#121824] rounded-xl border border-slate-200 dark:border-[#222E45]">
                 No automation policies found. Click "Create Automation Policy" above.
               </div>
             ) : (
@@ -278,16 +290,16 @@ export default function AutomationWorkflowsPage() {
                 return (
                   <div
                     key={rule.id}
-                    className="bg-[#121824] border border-[#222E45] rounded-xl p-5 hover:border-cyan-500/40 transition-all space-y-4 shadow-sm"
+                    className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-5 hover:border-cyan-500/40 transition-all space-y-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5">
                           <span className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : 'bg-slate-600'}`} />
-                          <h3 className="text-sm font-bold text-white tracking-wide">{rule.name}</h3>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">{rule.name}</h3>
                           <StatusBadge status={rule.status} />
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed max-w-4xl">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-4xl">
                           {rule.description}
                         </p>
                       </div>
@@ -300,7 +312,7 @@ export default function AutomationWorkflowsPage() {
                           })}
                           className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
                             isActive
-                              ? 'bg-[#162032] border-[#222E45] text-slate-300 hover:text-white'
+                              ? 'bg-[#162032] border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white'
                               : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
                           }`}
                         >
@@ -329,11 +341,11 @@ export default function AutomationWorkflowsPage() {
 
                     {/* Trigger Condition & Action Flow */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-[#1C263A] text-xs font-mono">
-                      <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#1C263A] space-y-1.5">
-                        <span className="text-slate-400 block text-[10px] font-semibold tracking-wider uppercase text-cyan-400">
+                      <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-[#1C263A] space-y-1.5">
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold tracking-wider uppercase text-cyan-600 dark:text-cyan-400">
                           EVENT TRIGGER CONDITION
                         </span>
-                        <div className="text-slate-300 text-[11px] leading-relaxed">
+                        <div className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
                           {Array.isArray(rule.conditions) ? (
                             rule.conditions.map((c: any, idx: number) => (
                               <div key={idx} className="flex items-center gap-1.5">
@@ -352,16 +364,16 @@ export default function AutomationWorkflowsPage() {
                         </div>
                       </div>
 
-                      <div className="p-3 bg-[#0B0F17] rounded-lg border border-[#1C263A] space-y-1.5">
-                        <span className="text-slate-400 block text-[10px] font-semibold tracking-wider uppercase text-emerald-400">
+                      <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-[#1C263A] space-y-1.5">
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold tracking-wider uppercase text-emerald-400">
                           EXECUTED ACTIONS CHAIN
                         </span>
-                        <div className="text-slate-300 text-[11px] space-y-1">
+                        <div className="text-slate-600 dark:text-slate-300 text-[11px] space-y-1">
                           {Array.isArray(rule.actions) ? (
                             rule.actions.map((a: any, idx: number) => (
                               <div key={idx} className="flex items-center gap-1.5">
                                 <ArrowRight className="w-3 h-3 text-emerald-400 shrink-0" />
-                                <span className="text-white font-semibold">{a.type}</span>
+                                <span className="text-slate-900 dark:text-white font-semibold">{a.type}</span>
                                 {a.target && <span className="text-slate-400">({a.target})</span>}
                               </div>
                             ))
@@ -382,16 +394,26 @@ export default function AutomationWorkflowsPage() {
               })
             )}
           </div>
+          <Pagination
+            page={rulePage}
+            total={totalRules}
+            pageSize={rulePageSize}
+            onPageChange={setRulePage}
+            onPageSizeChange={(newSize) => {
+              setRulePageSize(newSize);
+              setRulePage(1);
+            }}
+          />
         </div>
       )}
 
       {/* TAB 2: Live Execution Console */}
       {activeTab === 'terminal' && (
-        <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl overflow-hidden font-mono text-xs">
-          <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+        <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden font-mono text-xs">
+          <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-cyan-400" />
-              <span className="text-white font-bold tracking-wide">
+              <Terminal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span className="text-slate-900 dark:text-white font-bold tracking-wide">
                 ORCHESTRATION ENGINE LIVE TERMINAL (STDOUT / AUDIT STREAM)
               </span>
             </div>
@@ -405,19 +427,19 @@ export default function AutomationWorkflowsPage() {
           <div className="p-5 space-y-4">
             {liveExecutionLog ? (
               <div className="space-y-4">
-                <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45] flex items-center justify-between">
+                <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45] flex items-center justify-between">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">EXECUTED POLICY</span>
-                    <span className="text-white font-bold text-sm">{liveExecutionLog.ruleName}</span>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">EXECUTED POLICY</span>
+                    <span className="text-slate-900 dark:text-white font-bold text-sm">{liveExecutionLog.ruleName}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-slate-400 block text-[10px]">TOTAL EXECUTION DURATION</span>
-                    <span className="text-cyan-400 font-bold text-sm">{liveExecutionLog.result?.executionTimeMs} ms</span>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">TOTAL EXECUTION DURATION</span>
+                    <span className="text-cyan-600 dark:text-cyan-400 font-bold text-sm">{liveExecutionLog.result?.executionTimeMs} ms</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-[11px] text-slate-400 font-medium block">Orchestrator Execution Pipeline:</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Orchestrator Execution Pipeline:</span>
                   {(liveExecutionLog.result?.steps || []).map((step: any) => (
                     <div
                       key={step.step}
@@ -428,10 +450,10 @@ export default function AutomationWorkflowsPage() {
                       </span>
                       <div className="space-y-0.5 flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-white font-bold tracking-wide">{step.name}</span>
+                          <span className="text-slate-900 dark:text-white font-bold tracking-wide">{step.name}</span>
                           <span className="text-slate-500 text-[10px] font-mono">{step.durationMs} ms</span>
                         </div>
-                        <p className="text-slate-400 text-[11px]">{step.detail}</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px]">{step.detail}</p>
                       </div>
                     </div>
                   ))}
@@ -447,7 +469,7 @@ export default function AutomationWorkflowsPage() {
             ) : (
               <div className="py-16 text-center text-slate-500 space-y-2">
                 <Terminal className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-                <p className="text-slate-400 font-medium">No active execution running.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">No active execution running.</p>
                 <p className="text-[11px]">Select any policy under "Active Automation Policies" and click "Run Workflow Now" to stream live execution steps here.</p>
               </div>
             )}
@@ -457,9 +479,9 @@ export default function AutomationWorkflowsPage() {
 
       {/* TAB 3: Execution Runs History */}
       {activeTab === 'runs' && (
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl overflow-hidden text-xs">
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden text-xs">
           <table className="w-full text-left">
-            <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+            <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="p-3.5">Run ID</th>
                 <th className="p-3.5">Triggered By</th>
@@ -469,7 +491,7 @@ export default function AutomationWorkflowsPage() {
                 <th className="p-3.5 text-right">Inspection</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#222E45] text-slate-300 font-mono">
+            <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300 font-mono">
               {loadingRuns ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500">
@@ -485,21 +507,21 @@ export default function AutomationWorkflowsPage() {
               ) : (
                 runs.map((run: any) => (
                   <tr key={run.id} className="hover:bg-[#161F30] transition-colors">
-                    <td className="p-3.5 font-bold text-white">{run.id.slice(0, 8)}...</td>
-                    <td className="p-3.5 text-slate-300">{run.triggeredBy}</td>
-                    <td className="p-3.5 text-cyan-400">
+                    <td className="p-3.5 font-bold text-slate-900 dark:text-white">{run.id.slice(0, 8)}...</td>
+                    <td className="p-3.5 text-slate-600 dark:text-slate-300">{run.triggeredBy}</td>
+                    <td className="p-3.5 text-cyan-600 dark:text-cyan-400">
                       {run.result?.executionTimeMs ? `${run.result.executionTimeMs} ms` : '—'}
                     </td>
                     <td className="p-3.5">
                       <StatusBadge status={run.status} />
                     </td>
-                    <td className="p-3.5 text-slate-400">
+                    <td className="p-3.5 text-slate-500 dark:text-slate-400">
                       {run.createdAt ? new Date(run.createdAt).toLocaleString() : '—'}
                     </td>
                     <td className="p-3.5 text-right">
                       <button
                         onClick={() => setSelectedRunTrace(run)}
-                        className="px-2.5 py-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-cyan-400 font-medium text-[11px] border border-cyan-500/20"
+                        className="px-2.5 py-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-cyan-600 dark:text-cyan-400 font-medium text-[11px] border border-cyan-500/20"
                       >
                         View Trace
                       </button>
@@ -509,49 +531,59 @@ export default function AutomationWorkflowsPage() {
               )}
             </tbody>
           </table>
+          <Pagination
+            page={runPage}
+            total={totalRuns}
+            pageSize={runPageSize}
+            onPageChange={setRunPage}
+            onPageSizeChange={(newSize) => {
+              setRunPageSize(newSize);
+              setRunPage(1);
+            }}
+          />
         </div>
       )}
 
       {/* View Trace Modal */}
       {selectedRunTrace && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <FileCode className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Automation Run Trace: {selectedRunTrace.id}
                 </span>
               </div>
-              <button onClick={() => setSelectedRunTrace(null)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setSelectedRunTrace(null)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-3 font-mono text-xs max-h-[70vh] overflow-y-auto">
-              <div className="p-3 bg-[#121824] rounded border border-[#222E45] space-y-1">
-                <span className="text-slate-400 block text-[10px]">TRIGGER SOURCE</span>
-                <span className="text-white font-bold">{selectedRunTrace.triggeredBy}</span>
+              <div className="p-3 bg-white dark:bg-[#121824] rounded border border-slate-200 dark:border-[#222E45] space-y-1">
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">TRIGGER SOURCE</span>
+                <span className="text-slate-900 dark:text-white font-bold">{selectedRunTrace.triggeredBy}</span>
                 <span className="text-slate-500 text-[10px] block">
                   Started: {new Date(selectedRunTrace.startedAt).toLocaleString()}
                 </span>
               </div>
 
               <div className="space-y-1.5">
-                <span className="text-slate-400 text-[11px] font-semibold block">Execution Steps:</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Execution Steps:</span>
                 {(selectedRunTrace.result?.steps || []).map((step: any) => (
-                  <div key={step.step} className="p-2.5 bg-[#05080E] rounded border border-[#222E45] space-y-1">
-                    <div className="flex justify-between text-white font-bold">
+                  <div key={step.step} className="p-2.5 bg-[#05080E] rounded border border-slate-200 dark:border-[#222E45] space-y-1">
+                    <div className="flex justify-between text-slate-900 dark:text-white font-bold">
                       <span>{step.step}. {step.name}</span>
-                      <span className="text-cyan-400 font-mono">{step.durationMs} ms</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-mono">{step.durationMs} ms</span>
                     </div>
-                    <p className="text-slate-400 text-[11px]">{step.detail}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[11px]">{step.detail}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-t border-slate-200 dark:border-[#222E45] flex justify-end">
               <button
                 onClick={() => setSelectedRunTrace(null)}
                 className="px-4 py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold"
@@ -566,51 +598,51 @@ export default function AutomationWorkflowsPage() {
       {/* Create Automation Policy Modal */}
       {createModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div className="bg-[#121824] px-5 py-4 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div className="bg-white dark:bg-[#121824] px-5 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-400">
+                <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                   <Plus className="w-5 h-5" />
                 </span>
-                <h2 className="text-sm font-bold text-white">Create Cisco-Grade Automation Policy</h2>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Create Cisco-Grade Automation Policy</h2>
               </div>
-              <button onClick={() => setCreateModal(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setCreateModal(false)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateSubmit} className="p-5 space-y-4 text-xs">
               <div>
-                <label className="text-slate-300 font-medium block mb-1">Policy Name *</label>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Policy Name *</label>
                 <input
                   required
                   type="text"
                   placeholder="e.g. Starlink Low-Latency Path Steering"
                   value={newRule.name}
                   onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
-                  className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div>
-                <label className="text-slate-300 font-medium block mb-1">Operational Rationale & Description *</label>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Operational Rationale & Description *</label>
                 <textarea
                   required
                   rows={2}
                   placeholder="Specify criteria for automated failover, BFD probe evaluation, or ZTP enrollment..."
                   value={newRule.description}
                   onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
-                  className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Trigger Metric *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Trigger Metric *</label>
                   <select
                     value={newRule.triggerMetric}
                     onChange={(e) => setNewRule({ ...newRule, triggerMetric: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
                     <option value="bfd_latency_ms">BFD RTT Latency (ms)</option>
                     <option value="packet_loss_pct">Packet Loss (%)</option>
@@ -620,24 +652,24 @@ export default function AutomationWorkflowsPage() {
                 </div>
 
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Threshold Value *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Threshold Value *</label>
                   <input
                     required
                     type="number"
                     value={newRule.threshold}
                     onChange={(e) => setNewRule({ ...newRule, threshold: parseInt(e.target.value, 10) })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Automated Action *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Automated Action *</label>
                   <select
                     value={newRule.actionType}
                     onChange={(e) => setNewRule({ ...newRule, actionType: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
                     <option value="SWAP_CIRCUIT_PRIORITY">Swap WAN Priority (Atomic Failover)</option>
                     <option value="ISOLATE_COMPROMISED_VRF">Isolate & Blackhole VRF</option>
@@ -647,12 +679,12 @@ export default function AutomationWorkflowsPage() {
                 </div>
 
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Cooldown Timer (seconds)</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Cooldown Timer (seconds)</label>
                   <input
                     type="number"
                     value={newRule.cooldownSeconds}
                     onChange={(e) => setNewRule({ ...newRule, cooldownSeconds: parseInt(e.target.value, 10) })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -661,7 +693,7 @@ export default function AutomationWorkflowsPage() {
                 <button
                   type="button"
                   onClick={() => setCreateModal(false)}
-                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white font-medium"
+                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
                 >
                   Cancel
                 </button>

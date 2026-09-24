@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import {
   AlertOctagon, CheckCircle2, RefreshCw, Search,
   Plus, Check, X, ShieldAlert, Clock, ArrowRight,
@@ -111,14 +112,25 @@ export default function IncidentsPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['incidents-list', search],
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const { data: incidentResponse, isLoading, refetch } = useQuery({
+    queryKey: ['incidents-list', search, page, pageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/incidents?pageSize=50&search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/incidents?pageSize=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`);
+      return res.data;
     },
     refetchInterval: 5000,
   });
+
+  const data = Array.isArray(incidentResponse?.data)
+    ? incidentResponse.data
+    : Array.isArray(incidentResponse)
+    ? incidentResponse
+    : [];
+  const totalIncidents = incidentResponse?.total ?? data.length;
+  const totalPages = incidentResponse?.totalPages ?? Math.max(1, Math.ceil(totalIncidents / pageSize));
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status, resolution }: { id: string; status: string; resolution?: string }) => {
@@ -181,9 +193,9 @@ export default function IncidentsPage() {
             <span className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <AlertOctagon className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Major Incident Management & ITIL RCA</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Major Incident Management & ITIL RCA</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Tracking carrier circuit outages, core BGP flaps, and root cause analysis across multi-tenant fabric.
           </p>
         </div>
@@ -191,7 +203,7 @@ export default function IncidentsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
@@ -208,30 +220,30 @@ export default function IncidentsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4">
-          <span className="text-[11px] text-slate-400 block font-semibold">TOTAL INCIDENTS</span>
-          <span className="text-2xl font-bold text-white font-mono">{data?.length || 0}</span>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-semibold">TOTAL INCIDENTS</span>
+          <span className="text-2xl font-bold text-slate-900 dark:text-white font-mono">{totalIncidents}</span>
           <span className="text-[11px] text-slate-500 block mt-1">All logged carrier outages</span>
         </div>
-        <div className="bg-[#121824] border border-rose-500/30 rounded-xl p-4">
+        <div className="bg-white dark:bg-[#121824] border border-rose-500/30 rounded-xl p-4">
           <span className="text-[11px] text-rose-400 block font-semibold">P1 OUTAGES (CRITICAL)</span>
           <span className="text-2xl font-bold text-rose-400 font-mono">{p1Count}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Complete backbone or site blackout</span>
         </div>
-        <div className="bg-[#121824] border border-amber-500/30 rounded-xl p-4">
+        <div className="bg-white dark:bg-[#121824] border border-amber-500/30 rounded-xl p-4">
           <span className="text-[11px] text-amber-400 block font-semibold">P2 DEGRADATIONS</span>
           <span className="text-2xl font-bold text-amber-400 font-mono">{p2Count}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Single link failover / High latency</span>
         </div>
-        <div className="bg-[#121824] border border-cyan-500/30 rounded-xl p-4">
-          <span className="text-[11px] text-cyan-400 block font-semibold">ACTIVE INVESTIGATIONS</span>
-          <span className="text-2xl font-bold text-cyan-400 font-mono">{openCount}</span>
+        <div className="bg-white dark:bg-[#121824] border border-cyan-500/30 rounded-xl p-4">
+          <span className="text-[11px] text-cyan-600 dark:text-cyan-400 block font-semibold">ACTIVE INVESTIGATIONS</span>
+          <span className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 font-mono">{openCount}</span>
           <span className="text-[11px] text-slate-500 block mt-1">Under triage or monitoring</span>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3 flex-1 min-w-[280px]">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -239,13 +251,16 @@ export default function IncidentsPage() {
               type="text"
               placeholder="Search incidents by title, ID, or root cause..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#0B0F17] border border-[#222E45] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-cyan-500"
             />
           </div>
 
           {/* Priority filter */}
-          <div className="flex items-center gap-1 bg-[#0B0F17] p-1 rounded-lg border border-[#222E45]">
+          <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0B0F17] p-1 rounded-lg border border-slate-200 dark:border-[#222E45]">
             {['ALL', 'P1', 'P2', 'P3', 'P4'].map((p) => (
               <button
                 key={p}
@@ -263,14 +278,14 @@ export default function IncidentsPage() {
         </div>
 
         {/* Status filter */}
-        <div className="flex items-center gap-1 bg-[#0B0F17] p-1 rounded-lg border border-[#222E45]">
+        <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0B0F17] p-1 rounded-lg border border-slate-200 dark:border-[#222E45]">
           {['ALL', 'INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
               className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
                 statusFilter === st
-                  ? 'bg-slate-700 text-white font-semibold'
+                  ? 'bg-slate-700 text-slate-900 dark:text-white font-semibold'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -281,9 +296,9 @@ export default function IncidentsPage() {
       </div>
 
       {/* Incidents Table */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-xl overflow-hidden text-xs">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden text-xs">
         <table className="w-full text-left">
-          <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <tr>
               <th className="p-3.5">Priority</th>
               <th className="p-3.5">Incident Title</th>
@@ -293,7 +308,7 @@ export default function IncidentsPage() {
               <th className="p-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#222E45] text-slate-300">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-slate-500 font-mono">
@@ -320,22 +335,22 @@ export default function IncidentsPage() {
                             ? 'bg-rose-950/70 text-rose-400 border-rose-800 animate-pulse'
                             : isP2
                             ? 'bg-amber-950/70 text-amber-400 border-amber-800'
-                            : 'bg-cyan-950/70 text-cyan-400 border-cyan-800'
+                            : 'bg-cyan-950/70 text-cyan-600 dark:text-cyan-400 border-cyan-800'
                         }`}
                       >
                         {inc.priority || 'P3'}
                       </span>
                     </td>
-                    <td className="p-3.5 font-semibold text-white max-w-sm truncate">
+                    <td className="p-3.5 font-semibold text-slate-900 dark:text-white max-w-sm truncate">
                       {inc.title || inc.name}
                     </td>
-                    <td className="p-3.5 font-mono text-cyan-400 text-[11px]">
+                    <td className="p-3.5 font-mono text-cyan-600 dark:text-cyan-400 text-[11px]">
                       {inc.detectedBy || 'SYSTEM_MONITOR'}
                     </td>
                     <td className="p-3.5">
                       <StatusBadge status={inc.status || 'INVESTIGATING'} />
                     </td>
-                    <td className="p-3.5 text-slate-400 text-[11px] font-mono">
+                    <td className="p-3.5 text-slate-500 dark:text-slate-400 text-[11px] font-mono">
                       {inc.startedAt ? new Date(inc.startedAt).toLocaleString() : inc.createdAt ? new Date(inc.createdAt).toLocaleString() : '—'}
                     </td>
                     <td className="p-3.5 text-right">
@@ -353,7 +368,7 @@ export default function IncidentsPage() {
                         )}
                         <button
                           onClick={() => handleOpenIncidentDetail(inc)}
-                          className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[11px] font-medium border border-cyan-500/30 flex items-center gap-1"
+                          className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[11px] font-medium border border-cyan-500/30 flex items-center gap-1"
                         >
                           <Bot className="w-3.5 h-3.5" />
                           <span>AI RCA & Manage</span>
@@ -368,38 +383,51 @@ export default function IncidentsPage() {
         </table>
       </div>
 
+      {/* Incidents Pagination */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalIncidents}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(sz) => {
+          setPageSize(sz);
+          setPage(1);
+        }}
+      />
+
       {/* Incident Detail / RCA Modal */}
       {selectedInc && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertOctagon className="w-4 h-4 text-rose-400" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Incident RCA & Lifecycle Management
                 </span>
               </div>
-              <button onClick={() => setSelectedInc(null)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setSelectedInc(null)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-3 font-mono text-xs max-h-[75vh] overflow-y-auto">
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45] space-y-1">
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45] space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-rose-400 font-bold">{selectedInc.priority} OUTAGE</span>
                   <StatusBadge status={selectedInc.status} />
                 </div>
-                <span className="text-white font-bold text-sm block">{selectedInc.title || selectedInc.name}</span>
-                <p className="text-slate-400 text-[11px] leading-relaxed mt-1">
+                <span className="text-slate-900 dark:text-white font-bold text-sm block">{selectedInc.title || selectedInc.name}</span>
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed mt-1">
                   {selectedInc.description || 'Major network disruption identified by automated BFD telemetry daemon.'}
                 </p>
               </div>
 
               {/* Lifecycle Stage Switcher */}
-              <div className="p-3 bg-[#05080E] rounded-lg border border-[#222E45] space-y-3">
+              <div className="p-3 bg-[#05080E] rounded-lg border border-slate-200 dark:border-[#222E45] space-y-3">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1.5">Transition Status:</span>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-1.5">Transition Status:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {['INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'].map((st) => (
                       <button
@@ -408,7 +436,7 @@ export default function IncidentsPage() {
                         className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${
                           selectedInc.status === st
                             ? 'bg-cyan-500 text-black'
-                            : 'bg-[#121824] text-slate-300 hover:text-white border border-[#222E45]'
+                            : 'bg-white dark:bg-[#121824] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-[#222E45]'
                         }`}
                       >
                         {st}
@@ -417,13 +445,13 @@ export default function IncidentsPage() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-[#222E45]/60 flex items-center justify-between">
+                <div className="pt-2 border-t border-slate-200 dark:border-[#222E45]/60 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                       <Wrench className="w-3.5 h-3.5 text-emerald-400" />
                       Live Kernel Remediation
                     </span>
-                    <span className="text-[10px] text-slate-400 block">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
                       Flushes Linux ARP cache, checks kernel routing, verifies ICMP and closes incident.
                     </span>
                   </div>
@@ -439,16 +467,16 @@ export default function IncidentsPage() {
               </div>
 
               {/* Live AIOps Root Cause Analysis (RCA) Engine */}
-              <div className="p-3.5 bg-[#121824] rounded-lg border border-[#222E45] space-y-3">
+              <div className="p-3.5 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45] space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                  <div className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold text-xs">
                     <Bot className="w-4 h-4" />
                     <span>AIOps Automated Root Cause Analysis</span>
                   </div>
                   <button
                     onClick={() => runAiRca(selectedInc)}
                     disabled={aiRcaLoading}
-                    className="p-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-300 hover:text-white transition-all text-[10px] flex items-center gap-1"
+                    className="p-1 rounded bg-[#1A2333] hover:bg-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white transition-all text-[10px] flex items-center gap-1"
                     title="Re-run AI Root Cause Analysis"
                   >
                     <RefreshCw className={`w-3 h-3 ${aiRcaLoading ? 'animate-spin text-cyan-400' : ''}`} />
@@ -457,19 +485,19 @@ export default function IncidentsPage() {
                 </div>
 
                 {aiRcaLoading ? (
-                  <div className="py-6 flex flex-col items-center justify-center space-y-2 text-center text-slate-400">
-                    <Sparkles className="w-6 h-6 text-cyan-400 animate-spin" />
+                  <div className="py-6 flex flex-col items-center justify-center space-y-2 text-center text-slate-500 dark:text-slate-400">
+                    <Sparkles className="w-6 h-6 text-cyan-600 dark:text-cyan-400 animate-spin" />
                     <span className="text-[11px]">Correlating topology dependencies, active alarms, and BFD metrics...</span>
                   </div>
                 ) : aiRcaResult ? (
                   <div className="space-y-3">
                     <div className="p-2.5 bg-[#05080E] rounded border border-cyan-500/30 flex items-center justify-between text-[11px]">
                       <div>
-                        <span className="text-slate-400 block text-[10px]">ANALYZED TARGET</span>
-                        <span className="text-white font-bold">{aiRcaResult?.targetName || selectedInc?.title || 'Core Network Path'}</span>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px]">ANALYZED TARGET</span>
+                        <span className="text-slate-900 dark:text-white font-bold">{aiRcaResult?.targetName || selectedInc?.title || 'Core Network Path'}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-slate-400 block text-[10px]">AI CONFIDENCE SCORE</span>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px]">AI CONFIDENCE SCORE</span>
                         <span className="text-emerald-400 font-bold font-mono text-xs">
                           {Math.round((aiRcaResult?.confidence ?? 0.95) * 100)}%
                         </span>
@@ -477,10 +505,10 @@ export default function IncidentsPage() {
                     </div>
 
                     <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-1">
                         Determined Root Cause:
                       </span>
-                      <p className="text-slate-200 text-[11px] leading-relaxed bg-[#0A0E17] p-2.5 rounded border border-[#222E45]">
+                      <p className="text-slate-200 text-[11px] leading-relaxed bg-[#0A0E17] p-2.5 rounded border border-slate-200 dark:border-[#222E45]">
                         {aiRcaResult?.likelyCause || selectedInc?.rootCause || 'Core network disruption identified.'}
                       </p>
                     </div>
@@ -488,7 +516,7 @@ export default function IncidentsPage() {
                     {/* Telemetry Evidence */}
                     {Array.isArray(aiRcaResult?.evidence) && aiRcaResult.evidence.length > 0 && (
                       <div className="space-y-1.5">
-                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">
                           Corroborating Telemetry Signals ({aiRcaResult.evidence.length}):
                         </span>
                         <div className="space-y-1">
@@ -525,7 +553,7 @@ export default function IncidentsPage() {
                     )}
 
                     {/* Prescriptive Remediation */}
-                    <div className="p-3 bg-[#0F172A] rounded-xl border border-blue-500/30 space-y-1.5 text-[11px]">
+                    <div className="p-3 bg-white dark:bg-[#0F172A] rounded-xl border border-blue-500/30 space-y-1.5 text-[11px]">
                       <span className="text-blue-400 font-semibold block text-[10px] uppercase flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-blue-400" />
                         <span>Recommended Remediation Action:</span>
@@ -534,14 +562,14 @@ export default function IncidentsPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
                     {selectedInc?.rootCause || 'No root cause record available. Click Re-Analyze to trigger AI investigation.'}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-t border-slate-200 dark:border-[#222E45] flex justify-end">
               <button
                 onClick={() => setSelectedInc(null)}
                 className="px-4 py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold"
@@ -556,15 +584,15 @@ export default function IncidentsPage() {
       {/* Open Incident Modal */}
       {createModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div className="bg-[#121824] px-5 py-4 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div className="bg-white dark:bg-[#121824] px-5 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 rounded bg-rose-500/20 text-rose-400">
                   <Plus className="w-5 h-5" />
                 </span>
-                <h2 className="text-sm font-bold text-white">Open Carrier Major Incident</h2>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Open Carrier Major Incident</h2>
               </div>
-              <button onClick={() => setCreateModal(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setCreateModal(false)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -580,36 +608,36 @@ export default function IncidentsPage() {
               className="p-5 space-y-4 text-xs"
             >
               <div>
-                <label className="text-slate-300 font-medium block mb-1">Incident Title *</label>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Incident Title *</label>
                 <input
                   required
                   type="text"
                   placeholder="e.g. Core BGP Flap on Mumbai PoP Aggregator-01"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div>
-                <label className="text-slate-300 font-medium block mb-1">Outage Description *</label>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Outage Description *</label>
                 <textarea
                   required
                   rows={2}
                   placeholder="Describe impact, affected sites, and carrier ticket IDs..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Priority Level *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Priority Level *</label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
                   >
                     <option value="P1">P1 - Critical Blackout</option>
                     <option value="P2">P2 - Major Degradation</option>
@@ -619,11 +647,11 @@ export default function IncidentsPage() {
                 </div>
 
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Initial Status *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Initial Status *</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
                   >
                     <option value="INVESTIGATING">INVESTIGATING</option>
                     <option value="IDENTIFIED">IDENTIFIED</option>
@@ -636,14 +664,14 @@ export default function IncidentsPage() {
                 <button
                   type="button"
                   onClick={() => setCreateModal(false)}
-                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white font-medium"
+                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-semibold shadow-lg shadow-rose-500/20"
+                  className="px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-900 dark:text-white font-semibold shadow-lg shadow-rose-500/20"
                 >
                   {createMutation.isPending ? 'Opening Incident...' : 'Open Major Incident'}
                 </button>
@@ -656,27 +684,27 @@ export default function IncidentsPage() {
       {/* Real Kernel Remediation Log Dialog */}
       {remediationLog && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-emerald-500/40 rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
-            <div className="bg-[#121824] px-4 py-3 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-emerald-500/40 rounded-xl max-w-xl w-full overflow-hidden shadow-2xl space-y-4">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="p-1 rounded bg-emerald-500/20 text-emerald-400">
                   <Terminal className="w-4 h-4" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Live Linux Kernel Remediation Execution Log
                 </span>
               </div>
-              <button onClick={() => setRemediationLog(null)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setRemediationLog(null)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-4 space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-[#222E45]">
+              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-slate-200 dark:border-[#222E45]">
                 <span className="text-slate-400">TARGET INCIDENT ID:</span>
-                <span className="text-cyan-400 font-bold">{remediationLog.incidentId}</span>
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">{remediationLog.incidentId}</span>
               </div>
-              <div className="bg-[#05080E] p-3 rounded border border-[#222E45] space-y-2 text-slate-300">
+              <div className="bg-[#05080E] p-3 rounded border border-slate-200 dark:border-[#222E45] space-y-2 text-slate-600 dark:text-slate-300">
                 <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" />
                   <span>EXECUTED KERNEL COMMANDS & HARDWARE STATE:</span>
@@ -693,12 +721,12 @@ export default function IncidentsPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 All host routing tables, neighbor caches, and connected network metrics were verified live on interface eno1.
               </p>
             </div>
 
-            <div className="bg-[#121824] px-4 py-3 border-t border-[#222E45] flex justify-end">
+            <div className="bg-white dark:bg-[#121824] px-4 py-3 border-t border-slate-200 dark:border-[#222E45] flex justify-end">
               <button
                 onClick={() => setRemediationLog(null)}
                 className="px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold"

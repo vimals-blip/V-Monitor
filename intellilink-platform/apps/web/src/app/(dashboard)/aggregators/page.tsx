@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { Pagination } from '../../../components/shared/Pagination';
 import {
   Search, RefreshCw, Plus, Server, Activity, ShieldCheck,
   Trash2, X, Check, RotateCw, Cpu, Layers, Terminal, ArrowRight,
@@ -30,14 +31,25 @@ export default function AggregatorsPage() {
     status: 'ONLINE',
   });
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['aggregators-list', search],
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const { data: aggResponse, isLoading, refetch } = useQuery({
+    queryKey: ['aggregators-list', search, page, pageSize],
     queryFn: async () => {
-      const res = await apiClient.get('/aggregators?search=' + search);
-      return res.data?.data || res.data || [];
+      const res = await apiClient.get(`/aggregators?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`);
+      return res.data;
     },
     refetchInterval: 5000,
   });
+
+  const data = Array.isArray(aggResponse?.data)
+    ? aggResponse.data
+    : Array.isArray(aggResponse)
+    ? aggResponse
+    : [];
+  const totalAggregators = aggResponse?.total ?? data.length;
+  const totalPages = aggResponse?.totalPages ?? Math.max(1, Math.ceil(totalAggregators / pageSize));
 
   const { data: pops } = useQuery({
     queryKey: ['pops-for-agg'],
@@ -153,19 +165,19 @@ export default function AggregatorsPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="p-1.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
               <Server className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Core Tunnel Aggregators</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Core Tunnel Aggregators</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             High-throughput kernel-space WireGuard concentrators terminating encrypted branch tunnels.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg bg-[#121824] border border-[#222E45] text-slate-300 hover:text-white"
+            className="p-2 rounded-lg bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] text-slate-600 dark:text-slate-300 hover:text-white"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
@@ -182,45 +194,48 @@ export default function AggregatorsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Active Aggregators</div>
-          <div className="text-lg font-bold text-white mt-1">{(data || []).length}</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Active Aggregators</div>
+          <div className="text-lg font-bold text-slate-900 dark:text-white mt-1">{totalAggregators}</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Terminated Tunnels</div>
-          <div className="text-lg font-bold text-cyan-400 mt-1">100 Encrypted</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Terminated Tunnels</div>
+          <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400 mt-1">100 Encrypted</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Throughput Aggregate</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Throughput Aggregate</div>
           <div className="text-lg font-bold text-emerald-400 mt-1">18.4 Gbps</div>
         </div>
-        <div className="bg-[#121824] border border-[#222E45] p-3.5 rounded-lg">
-          <div className="text-[11px] text-slate-400 uppercase font-semibold">Avg Cluster CPU</div>
+        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] p-3.5 rounded-lg">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Avg Cluster CPU</div>
           <div className="text-lg font-bold text-emerald-400 mt-1">32.6%</div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg p-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg p-3 flex items-center justify-between">
         <div className="relative max-w-sm w-full">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search aggregators by hostname, IP..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#0B0F17] border border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-cyan-500"
           />
         </div>
-        <div className="text-xs text-slate-400 font-mono">
-          Kernel Protocol: <span className="text-cyan-400 font-bold">WIREGUARD_ACCELERATED</span>
+        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+          Kernel Protocol: <span className="text-cyan-600 dark:text-cyan-400 font-bold">WIREGUARD_ACCELERATED</span>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="bg-[#121824] border border-[#222E45] rounded-lg overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#0D121D] border-b border-[#222E45] text-slate-400 font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50 dark:bg-[#0D121D] border-b border-slate-200 dark:border-[#222E45] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
             <tr>
               <th className="p-3.5">Aggregator Hostname</th>
               <th className="p-3.5">Internal IP Address</th>
@@ -231,7 +246,7 @@ export default function AggregatorsPage() {
               <th className="p-3.5 text-right">Delete</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#222E45] text-slate-300">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#222E45] text-slate-600 dark:text-slate-300">
             {isLoading ? (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-slate-500">Loading aggregators...</td>
@@ -244,21 +259,21 @@ export default function AggregatorsPage() {
               data.map((item: any) => (
                 <tr key={item.id} className="hover:bg-[#161F30] transition-colors">
                   <td className="p-3.5">
-                    <div className="font-semibold text-white font-mono">{item.hostname || '—'}</div>
+                    <div className="font-semibold text-slate-900 dark:text-white font-mono">{item.hostname || '—'}</div>
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">{item.id}</div>
                   </td>
-                  <td className="p-3.5 font-mono text-cyan-400">{item.ipAddress || '10.250.1.10'}</td>
-                  <td className="p-3.5 text-slate-300 font-mono">
+                  <td className="p-3.5 font-mono text-cyan-600 dark:text-cyan-400">{item.ipAddress || '10.250.1.10'}</td>
+                  <td className="p-3.5 text-slate-600 dark:text-slate-300 font-mono">
                     {item.maxTunnels || 5000} Tunnels • {(item.maxBandwidthMbps / 1000) || 20} Gbps
                   </td>
-                  <td className="p-3.5 font-mono text-slate-400">{item.version || 'v3.4.1-lts'}</td>
+                  <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400">{item.version || 'v3.4.1-lts'}</td>
                   <td className="p-3.5"><StatusBadge status={item.status || 'ONLINE'} /></td>
                   <td className="p-3.5 text-center">
                     <button
                       onClick={() => handleHealthCheck(item)}
-                      className="px-2.5 py-1 rounded bg-[#1A2333] hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] font-medium transition-colors inline-flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded bg-[#1A2333] hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 text-[11px] font-medium transition-colors inline-flex items-center gap-1.5"
                     >
-                      <Activity className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                      <Activity className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 animate-pulse" />
                       Deep Inspect &amp; Fix
                     </button>
                   </td>
@@ -269,7 +284,7 @@ export default function AggregatorsPage() {
                           actionMutation.mutate({ id: item.id, action: 'delete' });
                         }
                       }}
-                      className="p-1.5 rounded bg-[#1A2333] hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-[#222E45] transition-colors"
+                      className="p-1.5 rounded bg-[#1A2333] hover:bg-red-500/20 text-slate-500 dark:text-slate-400 hover:text-red-400 border border-slate-200 dark:border-[#222E45] transition-colors"
                       title="Delete Aggregator"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -282,26 +297,39 @@ export default function AggregatorsPage() {
         </table>
       </div>
 
+      {/* Aggregators Fleet Pagination */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={totalAggregators}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(sz) => {
+          setPageSize(sz);
+          setPage(1);
+        }}
+      />
+
       {/* Deep WireGuard Aggregator Operations & Tunnel Inspector Modal */}
       {healthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Modal Header */}
-            <div className="bg-[#121824] px-6 py-4 border-b border-[#222E45] flex items-center justify-between">
+            <div className="bg-white dark:bg-[#121824] px-6 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                   <Server className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide uppercase font-mono">
                       WireGuard Aggregator Fabric: {healthModal.agg?.hostname}
                     </h2>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       {healthModal.result?.status || 'SYNCHRONIZED'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-0.5">
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                     <span>IP Address: <strong className="text-cyan-400">{healthModal.agg?.ipAddress || '192.168.0.50'}</strong></span>
                     <span>•</span>
                     <span>Kernel Module: <strong className="text-slate-200">{healthModal.result?.kernelModule || 'wireguard.ko'}</strong></span>
@@ -312,16 +340,16 @@ export default function AggregatorsPage() {
               </div>
               <button
                 onClick={() => setHealthModal(null)}
-                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1A2333] transition-colors"
+                className="text-slate-500 dark:text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1A2333] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Quick KPI Strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 p-5 bg-[#0D121D] border-b border-[#1C263A] text-xs font-mono">
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Daemon Subsystem</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 p-5 bg-slate-50 dark:bg-[#0D121D] border-b border-[#1C263A] text-xs font-mono">
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">Daemon Subsystem</div>
                 <div className="text-base font-bold text-emerald-400 mt-0.5 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   <span>{healthModal.result?.wireguardDaemon || 'ACTIVE (kernel)'}</span>
@@ -331,9 +359,9 @@ export default function AggregatorsPage() {
                 </div>
               </div>
 
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Active Cryptographic Peers</div>
-                <div className="text-base font-bold text-cyan-400 mt-0.5">
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">Active Cryptographic Peers</div>
+                <div className="text-base font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">
                   {healthModal.result?.activePeers?.toLocaleString() || '3,100'} / {healthModal.result?.maxTunnels || 5000}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
@@ -341,8 +369,8 @@ export default function AggregatorsPage() {
                 </div>
               </div>
 
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">WireGuard Throughput</div>
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">WireGuard Throughput</div>
                 <div className="text-base font-bold text-purple-400 mt-0.5">
                   {healthModal.result?.rxThroughput || '14.2 Gbps'} RX / {healthModal.result?.txThroughput || '12.8 Gbps'} TX
                 </div>
@@ -351,8 +379,8 @@ export default function AggregatorsPage() {
                 </div>
               </div>
 
-              <div className="p-3 bg-[#121824] rounded-lg border border-[#222E45]">
-                <div className="text-[10px] text-slate-400 uppercase font-sans">Host Core Utilization</div>
+              <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">Host Core Utilization</div>
                 <div className="text-base font-bold text-amber-400 mt-0.5">
                   {healthModal.result?.cpuLoad || '63%'} CPU • {healthModal.result?.memoryUsage || '78%'} RAM
                 </div>
@@ -363,7 +391,7 @@ export default function AggregatorsPage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-[#222E45] bg-[#0A0E17] px-5 text-xs font-medium">
+            <div className="flex border-b border-slate-200 dark:border-[#222E45] bg-[#0A0E17] px-5 text-xs font-medium">
               {[
                 { id: 'peers', label: 'Encrypted Branch Peers Matrix', icon: Layers, count: (healthModal.result?.peers || []).length || 4 },
                 { id: 'crypto', label: 'Kernel Crypto Engine & Hardware', icon: ShieldCheck },
@@ -381,13 +409,13 @@ export default function AggregatorsPage() {
                         ? tab.highlight
                           ? 'border-emerald-400 text-emerald-400 bg-emerald-950/20'
                           : 'border-cyan-400 text-cyan-300 bg-cyan-950/20 font-bold'
-                        : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-200 hover:border-slate-700'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
                     {tab.count !== undefined && (
-                      <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#1E293B] text-slate-300">
+                      <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#1E293B] text-slate-600 dark:text-slate-300">
                         {tab.count}
                       </span>
                     )}
@@ -400,7 +428,7 @@ export default function AggregatorsPage() {
             <div className="flex-1 overflow-y-auto p-5 text-xs">
               {healthModal.loading ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+                  <RefreshCw className="w-8 h-8 text-cyan-600 dark:text-cyan-400 animate-spin" />
                   <p className="text-slate-200 font-bold font-mono">Probing Kernel WireGuard Crypto Engine...</p>
                   <p className="text-slate-500 text-xs">Querying peer handshakes, cryptokey FIB tables, and socket counters.</p>
                 </div>
@@ -409,10 +437,10 @@ export default function AggregatorsPage() {
                   {/* TAB 1: Encrypted Branch Peers Matrix */}
                   {aggTab === 'peers' && (
                     <div className="space-y-4">
-                      <div className="border border-[#222E45] rounded-xl overflow-hidden bg-[#121824]">
-                        <div className="bg-[#0E1522] px-4 py-2.5 border-b border-[#222E45] flex items-center justify-between">
-                          <span className="font-bold text-white text-xs flex items-center gap-2 font-mono">
-                            <Layers className="w-4 h-4 text-cyan-400" />
+                      <div className="border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden bg-white dark:bg-[#121824]">
+                        <div className="bg-[#0E1522] px-4 py-2.5 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2 font-mono">
+                            <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                             Connected SD-WAN Edge Branch Tunnels (Noise_IKpsk2)
                           </span>
                           <span className="text-[10px] font-mono text-emerald-400">
@@ -422,7 +450,7 @@ export default function AggregatorsPage() {
 
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs font-mono">
-                            <thead className="bg-[#090D15] text-slate-400 text-[10px] uppercase border-b border-[#222E45]">
+                            <thead className="bg-[#090D15] text-slate-500 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-[#222E45]">
                               <tr>
                                 <th className="p-3">Edge Branch Site</th>
                                 <th className="p-3">Remote Endpoint</th>
@@ -433,24 +461,24 @@ export default function AggregatorsPage() {
                                 <th className="p-3 text-right">BFD State</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#1C263A] text-slate-300">
+                            <tbody className="divide-y divide-[#1C263A] text-slate-600 dark:text-slate-300">
                               {(healthModal.result?.peers || []).map((peer: any, idx: number) => (
                                 <tr key={idx} className="hover:bg-[#161F30] transition-colors">
                                   <td className="p-3">
-                                    <div className="font-bold text-white font-sans">{peer.siteName}</div>
-                                    <div className="text-[10px] text-cyan-400">{peer.virtualIp}</div>
+                                    <div className="font-bold text-slate-900 dark:text-white font-sans">{peer.siteName}</div>
+                                    <div className="text-[10px] text-cyan-600 dark:text-cyan-400">{peer.virtualIp}</div>
                                   </td>
-                                  <td className="p-3 text-slate-300 font-bold">{peer.endpoint}</td>
+                                  <td className="p-3 text-slate-600 dark:text-slate-300 font-bold">{peer.endpoint}</td>
                                   <td className="p-3">
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#162032] text-slate-200 border border-[#222E45]">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#162032] text-slate-200 border border-slate-200 dark:border-[#222E45]">
                                       {peer.allowedSubnet}
                                     </span>
                                   </td>
-                                  <td className="p-3 text-slate-400 truncate max-w-[120px]" title={peer.publicKey}>
+                                  <td className="p-3 text-slate-500 dark:text-slate-400 truncate max-w-[120px]" title={peer.publicKey}>
                                     {peer.publicKey?.slice(0, 14)}...
                                   </td>
                                   <td className="p-3 text-emerald-400 font-bold">{peer.lastHandshake}</td>
-                                  <td className="p-3 text-slate-300">
+                                  <td className="p-3 text-slate-600 dark:text-slate-300">
                                     <span>{peer.rxBytesFormatted}</span>
                                     <span className="text-slate-500"> / {peer.txBytesFormatted}</span>
                                   </td>
@@ -466,8 +494,8 @@ export default function AggregatorsPage() {
                         </div>
                       </div>
 
-                      <div className="p-3.5 bg-[#0C121E] rounded-xl border border-[#222E45] space-y-1.5 font-mono text-[11px] text-slate-300">
-                        <div className="text-cyan-400 font-bold text-xs uppercase font-sans">Cryptokey Routing Status:</div>
+                      <div className="p-3.5 bg-[#0C121E] rounded-xl border border-slate-200 dark:border-[#222E45] space-y-1.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                        <div className="text-cyan-600 dark:text-cyan-400 font-bold text-xs uppercase font-sans">Cryptokey Routing Status:</div>
                         <div>✓ Kernel cryptokey routing table synchronized across PoP edge gateways.</div>
                         <div>✓ Sliding anti-replay window: 64 packets nominal (zero replay attempts detected).</div>
                         <div>✓ Session key rotation interval: 2 hours (Noise_IKpsk2 perfect forward secrecy active).</div>
@@ -479,48 +507,48 @@ export default function AggregatorsPage() {
                   {aggTab === 'crypto' && (
                     <div className="space-y-4 font-mono">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-3">
-                          <span className="font-bold text-white text-xs block border-b border-[#1E293B] pb-2">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs block border-b border-slate-200 dark:border-[#1E293B] pb-2">
                             Cryptographic Cipher Architecture
                           </span>
                           <div className="space-y-2 text-[11px]">
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Authenticated Encryption:</span>
-                              <span className="text-cyan-400 font-bold">{healthModal.result?.cipherSuite || 'ChaCha20-Poly1305 (RFC 8439)'}</span>
+                              <span className="text-cyan-600 dark:text-cyan-400 font-bold">{healthModal.result?.cipherSuite || 'ChaCha20-Poly1305 (RFC 8439)'}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Diffie-Hellman Key Exchange:</span>
                               <span className="text-emerald-400 font-bold">{healthModal.result?.keyExchange || 'Curve25519 (ECDH)'}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Cryptographic Hash:</span>
                               <span className="text-purple-300 font-bold">{healthModal.result?.hashAlgorithm || 'BLAKE2s (RFC 7693)'}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Anti-Replay Window:</span>
                               <span className="text-amber-400 font-bold">{healthModal.result?.replayWindow || '64 packets nominal'}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 space-y-3">
-                          <span className="font-bold text-white text-xs block border-b border-[#1E293B] pb-2">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs block border-b border-slate-200 dark:border-[#1E293B] pb-2">
                             Kernel Socket &amp; Host Interface Counters
                           </span>
                           <div className="space-y-2 text-[11px]">
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Cumulative Kernel RX:</span>
-                              <span className="text-white font-bold">{healthModal.result?.rxBytesFormatted || '107 GB'}</span>
+                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.rxBytesFormatted || '107 GB'}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Cumulative Kernel TX:</span>
-                              <span className="text-white font-bold">{healthModal.result?.txBytesFormatted || '7.17 GB'}</span>
+                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.txBytesFormatted || '7.17 GB'}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Interface Dropped Packets:</span>
                               <span className="text-amber-400 font-bold">{healthModal.result?.rxDrops?.toLocaleString() || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-2 bg-[#0B0F17] rounded border border-[#1E293B]">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Hardware Packet Errors:</span>
                               <span className="text-emerald-400 font-bold">{healthModal.result?.rxErrors || 0}</span>
                             </div>
@@ -533,9 +561,9 @@ export default function AggregatorsPage() {
                   {/* TAB 3: Live Peer Latency Probe Terminal */}
                   {aggTab === 'probe' && (
                     <div className="space-y-3 font-mono">
-                      <div className="bg-[#121824] p-3.5 rounded-xl border border-[#222E45] space-y-3">
+                      <div className="bg-white dark:bg-[#121824] p-3.5 rounded-xl border border-slate-200 dark:border-[#222E45] space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <span className="text-xs text-slate-300 font-bold font-sans">
+                          <span className="text-xs text-slate-600 dark:text-slate-300 font-bold font-sans">
                             Dispatch ICMP Echo Probe to Peer Endpoint via WireGuard Tunnel:
                           </span>
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -549,7 +577,7 @@ export default function AggregatorsPage() {
                                 className={`px-2 py-1 rounded text-[10px] border transition-colors ${
                                   probeTarget === preset
                                     ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-                                    : 'bg-[#0B0F17] text-slate-400 border-[#222E45] hover:text-white'
+                                    : 'bg-[#0B0F17] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-[#222E45] hover:text-white'
                                 }`}
                               >
                                 {preset}
@@ -564,7 +592,7 @@ export default function AggregatorsPage() {
                             placeholder="Target Peer IP..."
                             value={probeTarget}
                             onChange={(e) => setProbeTarget(e.target.value)}
-                            className="flex-1 bg-[#090D15] border border-[#222E45] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                            className="flex-1 bg-[#090D15] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                           />
                           <button
                             onClick={() => aggActionMutation.mutate({ aggId: healthModal.agg.id, action: 'ping-peers', params: { target: probeTarget } })}
@@ -577,15 +605,15 @@ export default function AggregatorsPage() {
                         </div>
                       </div>
 
-                      <div className="bg-[#05080E] p-4 rounded-xl border border-[#222E45] space-y-2">
+                      <div className="bg-[#05080E] p-4 rounded-xl border border-slate-200 dark:border-[#222E45] space-y-2">
                         <div className="flex items-center justify-between text-[10px] text-slate-500 border-b border-[#1A2333] pb-1.5">
-                          <span className="flex items-center gap-1.5 text-cyan-400">
+                          <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
                             <Terminal className="w-3.5 h-3.5" />
                             <span>Linux Kernel ICMP Echo Socket (ping -c 3 -W 1 {probeTarget})</span>
                           </span>
                           <span>Aggregator Host: {healthModal.agg?.hostname}</span>
                         </div>
-                        <pre className="text-slate-300 text-[11px] leading-relaxed whitespace-pre-wrap overflow-x-auto">
+                        <pre className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed whitespace-pre-wrap overflow-x-auto">
                           {actionLog || 'Select a peer endpoint above and click "Run Peer Ping" to verify encrypted transit latency.'}
                         </pre>
                       </div>
@@ -597,20 +625,20 @@ export default function AggregatorsPage() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {/* Action 1: Resync Cryptokey Routing */}
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Zap className="w-4 h-4 text-cyan-400" />
-                              <span className="text-xs font-bold text-white font-mono">Resync Cryptokey Routing</span>
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">Resync Cryptokey Routing</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                               Re-reads peer public keys and allowed subnets from MySQL SD-WAN database and reinstalls the FIB routing table in kernel module wireguard.ko.
                             </p>
                           </div>
                           <button
                             onClick={() => aggActionMutation.mutate({ aggId: healthModal.agg.id, action: 'sync-cryptokey' })}
                             disabled={executingAction === 'sync-cryptokey'}
-                            className="w-full py-2 px-3 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-mono font-bold transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2 px-3 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 text-xs font-mono font-bold transition-all flex items-center justify-center gap-2"
                           >
                             {executingAction === 'sync-cryptokey' ? (
                               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -622,13 +650,13 @@ export default function AggregatorsPage() {
                         </div>
 
                         {/* Action 2: Rotate Ephemeral Keys */}
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <Key className="w-4 h-4 text-emerald-400" />
-                              <span className="text-xs font-bold text-white font-mono">Rotate Ephemeral Crypto Keys</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">Rotate Ephemeral Crypto Keys</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                               Forces Noise_IKpsk2 Diffie-Hellman handshake renegotiation across all active edge tunnels, ensuring perfect forward secrecy without downtime.
                             </p>
                           </div>
@@ -647,13 +675,13 @@ export default function AggregatorsPage() {
                         </div>
 
                         {/* Action 3: Soft Restart Daemon */}
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <RotateCw className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-bold text-white font-mono">Soft Restart WireGuard Daemon</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">Soft Restart WireGuard Daemon</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                               Safely reloads daemon service and re-binds UDP socket on port 51820 while preserving authenticated peer session state.
                             </p>
                           </div>
@@ -672,13 +700,13 @@ export default function AggregatorsPage() {
                         </div>
 
                         {/* Action 4: Flush Stale Peer ARP */}
-                        <div className="bg-[#121824] border border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <Radio className="w-4 h-4 text-purple-400" />
-                              <span className="text-xs font-bold text-white font-mono">Dispatch BFD Keepalive Burst</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">Dispatch BFD Keepalive Burst</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                               Broadcasts synthetic BFD echo probes to all 4 edge branch endpoints to wake up dormant tunnels and clear stale neighbor caches.
                             </p>
                           </div>
@@ -696,7 +724,7 @@ export default function AggregatorsPage() {
                       {/* Execution Terminal Output Log */}
                       {actionLog && (
                         <div className="p-4 rounded-xl bg-[#05080E] border border-cyan-500/30 font-mono space-y-2 animate-in fade-in duration-200">
-                          <div className="flex items-center justify-between text-[10px] text-cyan-400 border-b border-[#1E293B] pb-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-cyan-600 dark:text-cyan-400 border-b border-slate-200 dark:border-[#1E293B] pb-1.5">
                             <span className="font-bold flex items-center gap-1.5">
                               <Terminal className="w-3.5 h-3.5" />
                               Aggregator Operation Execution Log:
@@ -715,7 +743,7 @@ export default function AggregatorsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-[#121824] px-6 py-3 border-t border-[#222E45] flex items-center justify-between text-xs font-mono">
+            <div className="bg-white dark:bg-[#121824] px-6 py-3 border-t border-slate-200 dark:border-[#222E45] flex items-center justify-between text-xs font-mono">
               <span className="text-slate-500 text-[11px]">
                 Aggregator ID: {healthModal.agg?.id}
               </span>
@@ -723,7 +751,7 @@ export default function AggregatorsPage() {
                 <button
                   onClick={() => probeMutation.mutate({ aggId: healthModal.agg.id, target: probeTarget })}
                   disabled={probeMutation.isPending}
-                  className="px-3 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-cyan-400 text-xs font-medium transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-cyan-600 dark:text-cyan-400 text-xs font-medium transition-colors flex items-center gap-1.5"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${probeMutation.isPending ? 'animate-spin' : ''}`} />
                   <span>Re-Probe Aggregator</span>
@@ -743,15 +771,15 @@ export default function AggregatorsPage() {
       {/* Add Aggregator Modal */}
       {createModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B0F17] border border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div className="bg-[#121824] px-5 py-4 border-b border-[#222E45] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div className="bg-white dark:bg-[#121824] px-5 py-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-400">
+                <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                   <Plus className="w-5 h-5" />
                 </span>
-                <h2 className="text-sm font-bold text-white">Deploy WireGuard Aggregator</h2>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Deploy WireGuard Aggregator</h2>
               </div>
-              <button onClick={() => setCreateModal(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setCreateModal(false)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -767,35 +795,35 @@ export default function AggregatorsPage() {
               className="p-5 space-y-4 text-xs"
             >
               <div>
-                <label className="text-slate-300 font-medium block mb-1">Hostname *</label>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Hostname *</label>
                 <input
                   required
                   type="text"
                   placeholder="e.g. agg03.mumbai.intellilink.net"
                   value={formData.hostname}
                   onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
-                  className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">IP Address *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">IP Address *</label>
                   <input
                     required
                     type="text"
                     placeholder="10.250.1.15"
                     value={formData.ipAddress}
                     onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-cyan-400 font-mono focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-cyan-600 dark:text-cyan-400 font-mono focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Assigned PoP *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Assigned PoP *</label>
                   <select
                     value={formData.popId}
                     onChange={(e) => setFormData({ ...formData, popId: e.target.value })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
                     {(pops || []).map((p: any) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -806,21 +834,21 @@ export default function AggregatorsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Max Tunnels</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Max Tunnels</label>
                   <input
                     type="number"
                     value={formData.maxTunnels}
                     onChange={(e) => setFormData({ ...formData, maxTunnels: parseInt(e.target.value, 10) })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-medium block mb-1">Max Bandwidth (Mbps)</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Max Bandwidth (Mbps)</label>
                   <input
                     type="number"
                     value={formData.maxBandwidthMbps}
                     onChange={(e) => setFormData({ ...formData, maxBandwidthMbps: parseInt(e.target.value, 10) })}
-                    className="w-full bg-[#121824] border border-[#222E45] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -829,7 +857,7 @@ export default function AggregatorsPage() {
                 <button
                   type="button"
                   onClick={() => setCreateModal(false)}
-                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-white font-medium"
+                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
                 >
                   Cancel
                 </button>

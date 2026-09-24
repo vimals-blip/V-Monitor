@@ -181,7 +181,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
   /**
    * Ping single host via Linux ICMP utility to measure genuine RTT latency
    */
-  async pingHost(ip: string, timeoutSec = 1): Promise<{ alive: boolean; latencyMs: number }> {
+  async pingHost(ip: string, timeoutSec = 0.25): Promise<{ alive: boolean; latencyMs: number }> {
     try {
       const { stdout } = await execFileAsync('/usr/bin/ping', ['-c', '1', '-W', String(timeoutSec), ip]);
       const match = stdout.match(/time=([0-9.]+)\s*ms/);
@@ -432,7 +432,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
     const scan = await this.scanNetwork({ probePorts: false });
     const targetDevices = dto.deviceIps && dto.deviceIps.length > 0
       ? scan.discoveredDevices.filter((d) => dto.deviceIps?.includes(d.ip))
-      : scan.discoveredDevices.filter((d) => d.status === 'ONLINE');
+      : scan.discoveredDevices;
 
     if (targetDevices.length === 0) {
       return { message: 'No devices found to ingest', enrolledCount: 0 };
@@ -641,9 +641,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
     await qr.startTransaction();
 
     try {
-      // Disassociate users from old demo tenants to prevent foreign key blocks
-      await qr.query('UPDATE users SET tenantId = NULL WHERE tenantId IS NOT NULL');
-
+      await qr.query('SET FOREIGN_KEY_CHECKS = 0');
       // Delete demo data in reverse dependency order
       await qr.query('DELETE FROM alerts');
       await qr.query('DELETE FROM incidents');
@@ -658,6 +656,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
       await qr.query('DELETE FROM aggregators');
       await qr.query('DELETE FROM pops');
       await qr.query('DELETE FROM tenants');
+      await qr.query('SET FOREIGN_KEY_CHECKS = 1');
 
       await qr.commitTransaction();
     } catch (err: any) {
@@ -702,6 +701,8 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
         },
       }),
     );
+
+    await this.dataSource.query('UPDATE users SET tenantId = ?', [tenant.id]);
 
     // 4. Create Genuine Core PoP
     const pop = await this.popRepo.save(
@@ -766,7 +767,11 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
     const devicesToIngest = scan.discoveredDevices.filter(
       (d) => d.status === 'ONLINE' || targetIpSet.has(d.ip),
     );
-    const createdGateways: GatewayEntity[] = [];
+    const gwsToSave: GatewayEntity[] = [];
+    const wansToSave: WanLinkEntity[] = [];
+    const samplesToSave: MetricSampleEntity[] = [];
+    const tunnelsToSave: TunnelEntity[] = [];
+    const incidentsToSave: IncidentEntity[] = [];
 
     for (const dev of devicesToIngest) {
       const serialNumber = `SN-${dev.mac.replace(/:/g, '').toUpperCase()}`;
@@ -776,63 +781,60 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
         ? `core-gw-${ipSlug}.lan`
         : `${vendorSlug}-${ipSlug}.edge`;
 
-      const gw = await this.gwRepo.save(
-        this.gwRepo.create({
-          id: uuidv4(),
-          siteId: primarySite.id,
-          tenantId: tenant.id,
-          organizationId: orgId,
-          hostname,
-          model: `${dev.vendor} Hardware (${dev.deviceType})`,
-          serialNumber,
-          firmwareVersion: 'Enterprise v6.8-LTS',
-          status: dev.status,
-          lastHeartbeatAt: new Date(),
-        }),
-      );
+      const gwId = uuidv4();
+      const wanId = uuidv4();
 
-      const wan = await this.wanRepo.save(
-        this.wanRepo.create({
-          id: uuidv4(),
-          gatewayId: gw.id,
-          siteId: primarySite.id,
-          tenantId: tenant.id,
-          organizationId: orgId,
-          name: `${hostname}-eth0`,
-          type: dev.isDefaultGateway ? 'FIBER' : 'BROADBAND',
-          providerName: dev.vendor,
-          bandwidthDownMbps: 1000,
-          bandwidthUpMbps: 1000,
-          status: dev.status === 'ONLINE' ? 'ACTIVE' : 'DEGRADED',
-          isPrimary: true,
-        }),
-      );
+      const gw = this.gwRepo.create({
+        id: gwId,
+        siteId: primarySite.id,
+        tenantId: tenant.id,
+        organizationId: orgId,
+        hostname,
+        model: `${dev.vendor} Hardware (${dev.deviceType})`,
+        serialNumber,
+        firmwareVersion: 'Enterprise v6.8-LTS',
+        status: dev.status,
+        lastHeartbeatAt: new Date(),
+      });
+      gwsToSave.push(gw);
 
-      // Create initial metric sample
+      const wan = this.wanRepo.create({
+        id: wanId,
+        gatewayId: gwId,
+        siteId: primarySite.id,
+        tenantId: tenant.id,
+        organizationId: orgId,
+        name: `${hostname}-eth0`,
+        type: dev.isDefaultGateway ? 'FIBER' : 'BROADBAND',
+        providerName: dev.vendor,
+        bandwidthDownMbps: 1000,
+        bandwidthUpMbps: 1000,
+        status: dev.status === 'ONLINE' ? 'ACTIVE' : 'DEGRADED',
+        isPrimary: true,
+      });
+      wansToSave.push(wan);
+
       const sample = new MetricSampleEntity();
       sample.id = uuidv4();
-      sample.sourceId = gw.id;
+      sample.sourceId = gwId;
       sample.sourceType = 'GATEWAY';
       sample.metrics = {
         latencyMs: dev.latencyMs || (dev.status === 'ONLINE' ? 0.2 : 0),
         packetLossPercent: dev.status === 'ONLINE' ? 0 : 100,
       };
       sample.timestamp = new Date();
-      await this.metricRepo.save(sample);
+      samplesToSave.push(sample);
 
-      createdGateways.push(gw);
-
-      // 8. Provision real WireGuard tunnel to Core Aggregator for gateways
-      if (createdGateways.length <= 25 || targetIpSet.has(dev.ip)) {
-        await this.tunnelRepo.save(
+      if (gwsToSave.length <= 25 || targetIpSet.has(dev.ip)) {
+        tunnelsToSave.push(
           this.tunnelRepo.create({
             id: uuidv4(),
             siteId: primarySite.id,
             tenantId: tenant.id,
             organizationId: orgId,
-            gatewayId: gw.id,
+            gatewayId: gwId,
             aggregatorId: aggregator.id,
-            wanLinkId: wan.id,
+            wanLinkId: wanId,
             protocol: 'WIREGUARD',
             status: dev.status === 'ONLINE' ? 'UP' : 'DOWN',
             localEndpoint: `${dev.ip}:51820`,
@@ -843,9 +845,8 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
         );
       }
 
-      // If any operator-targeted endpoint is unreachable, raise a real Incident dynamically
       if (dev.status === 'OFFLINE' && targetIpSet.has(dev.ip)) {
-        await this.incidentRepo.save(
+        incidentsToSave.push(
           this.incidentRepo.create({
             id: uuidv4(),
             organizationId: orgId,
@@ -862,6 +863,15 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
         );
       }
     }
+
+    // Execute bulk saves in chunks
+    await this.gwRepo.save(gwsToSave, { chunk: 50 });
+    await this.wanRepo.save(wansToSave, { chunk: 50 });
+    await this.metricRepo.save(samplesToSave, { chunk: 50 });
+    if (tunnelsToSave.length > 0) await this.tunnelRepo.save(tunnelsToSave, { chunk: 50 });
+    if (incidentsToSave.length > 0) await this.incidentRepo.save(incidentsToSave, { chunk: 50 });
+
+    const createdGateways = gwsToSave;
 
     // 9. Read Real Host Kernel Routes and Inject
     const realRoutes = [

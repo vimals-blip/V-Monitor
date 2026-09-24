@@ -16,21 +16,21 @@ export default function SystemHealthPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-white tracking-tight">System Health & Subsystem Dependencies</h1>
-        <p className="text-xs text-slate-400 mt-0.5">Automated liveness and readiness probes across the control plane infrastructure</p>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">System Health & Subsystem Dependencies</h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Automated liveness and readiness probes across the control plane infrastructure</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {services.map((svc, idx) => (
-          <div key={idx} className="bg-[#121824] border border-[#222E45] rounded-lg p-5 space-y-3">
+          <div key={idx} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">{svc.name}</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white">{svc.name}</span>
               <StatusBadge status={svc.status} />
             </div>
-            <p className="text-xs text-slate-400">{svc.desc}</p>
-            <div className="pt-2 border-t border-[#222E45] flex items-center justify-between text-xs font-mono text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{svc.desc}</p>
+            <div className="pt-2 border-t border-slate-200 dark:border-[#222E45] flex items-center justify-between text-xs font-mono text-slate-500">
               <span>Probe Latency</span>
-              <span className="text-emerald-400">{svc.latency}</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{svc.latency}</span>
             </div>
           </div>
         ))}
