@@ -31,9 +31,9 @@ export default function MonitoringPage() {
     refetchInterval: 6000,
   });
 
-  const wanSamples = telemetry?.recentWan || [];
-  const popSamples = telemetry?.recentPop || [];
-  const gwSamples = telemetry?.recentGw || [];
+  const wanSamples = Array.isArray(telemetry?.recentWan) ? telemetry.recentWan : [];
+  const popSamples = Array.isArray(telemetry?.recentPop) ? telemetry.recentPop : [];
+  const gwSamples = Array.isArray(telemetry?.recentGw) ? telemetry.recentGw : [];
   const host = telemetry?.hostTelemetry;
 
   return (
@@ -115,7 +115,7 @@ export default function MonitoringPage() {
               {host.networkInterfaces?.length || 2} Interfaces
             </div>
             <span className="text-[11px] text-slate-500 truncate block">
-              {host.networkInterfaces?.map((i: any) => i.name).join(', ')}
+              {Array.isArray(host.networkInterfaces) ? host.networkInterfaces.map((i: any) => i.name).join(', ') : 'eno1, lo'}
             </span>
           </div>
         </div>
@@ -391,7 +391,7 @@ export default function MonitoringPage() {
           </div>
         </div>
 
-        {anomalyData?.anomalies && anomalyData.anomalies.length > 0 && (
+        {Array.isArray(anomalyData?.anomalies) && anomalyData.anomalies.length > 0 && (
           <div className="space-y-1.5 pt-1">
             <span className="text-slate-400 block text-[10px] uppercase font-semibold">
               Live Flagged Telemetry Outliers:

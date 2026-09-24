@@ -89,7 +89,7 @@ export default function InitialSetupPage() {
     .map((s) => s.trim())
     .filter(Boolean);
   const primaryIface = (interfaces || []).find((i: any) => i.name === 'eno1') || interfaces?.[0];
-  const discoveredDevices = scanMutation.data?.discoveredDevices || [];
+  const discoveredDevices = Array.isArray(scanMutation.data?.discoveredDevices) ? scanMutation.data.discoveredDevices : [];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

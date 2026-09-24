@@ -476,7 +476,7 @@ export default function AutomationWorkflowsPage() {
                     Loading historical automation runs from MySQL...
                   </td>
                 </tr>
-              ) : (runs || []).length === 0 ? (
+              ) : !Array.isArray(runs) || runs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500">
                     No runs recorded yet. Click "Run Workflow Now" to trigger an automated self-healing execution.

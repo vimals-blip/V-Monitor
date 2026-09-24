@@ -180,7 +180,7 @@ export default function GatewaysPage() {
 
   const primaryNic = hostInterfaces && hostInterfaces.length > 0 ? hostInterfaces[0] : null;
 
-  const filteredDiscovered = (discoveryData?.discoveredDevices || []).filter((dev: any) => {
+  const filteredDiscovered = (Array.isArray(discoveryData?.discoveredDevices) ? discoveryData.discoveredDevices : []).filter((dev: any) => {
     if (vendorFilter === 'ALL') return true;
     return dev.vendor?.toLowerCase().includes(vendorFilter.toLowerCase());
   });
@@ -632,7 +632,7 @@ export default function GatewaysPage() {
                                   {dev.latencyMs > 0 ? `${dev.latencyMs} ms` : '—'}
                                 </td>
                                 <td className="p-2.5">
-                                  {dev.openPorts?.length > 0 ? (
+                                  {Array.isArray(dev.openPorts) && dev.openPorts.length > 0 ? (
                                     <div className="flex gap-1">
                                       {dev.openPorts.map((p: number) => (
                                         <span

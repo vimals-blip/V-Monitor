@@ -50,4 +50,10 @@ export class PopsController {
   probe(@Param('id') id: string, @Body() body: any, @CurrentUser() user: any) {
     return this.service.probePoP(id, body, user);
   }
+
+  @Post(':id/action')
+  @ApiOperation({ summary: 'Execute live routing or remediation action on PoP' })
+  executeAction(@Param('id') id: string, @Body() body: { action: string; params?: any }, @CurrentUser() user: any) {
+    return this.service.executeAction(id, body.action, body.params, user);
+  }
 }

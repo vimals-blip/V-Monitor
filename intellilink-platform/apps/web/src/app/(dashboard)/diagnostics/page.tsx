@@ -264,7 +264,7 @@ export default function LiveDiagnosticsPage() {
                       </div>
                     )}
 
-                    {liveOutput.result?.resolvedIps && (
+                    {liveOutput.result?.resolvedIps && Array.isArray(liveOutput.result.resolvedIps) && liveOutput.result.resolvedIps.length > 0 && (
                       <div className="bg-[#0C121E] p-3 rounded border border-[#1E293B]">
                         <span className="text-cyan-400 font-bold">Resolved IPv4 Addresses ({liveOutput.result.lookupDurationMs}ms):</span>
                         <div className="mt-1 flex flex-wrap gap-1.5">

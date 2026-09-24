@@ -50,4 +50,10 @@ export class AggregatorsController {
   probe(@Param('id') id: string, @CurrentUser() user: any) {
     return this.service.probeAggregator(id, user);
   }
+
+  @Post(':id/action')
+  @ApiOperation({ summary: 'Execute cryptokey sync, key rotation, or daemon restart on aggregator' })
+  executeAction(@Param('id') id: string, @Body() body: { action: string; params?: any }, @CurrentUser() user: any) {
+    return this.service.executeAction(id, body.action, body.params, user);
+  }
 }
