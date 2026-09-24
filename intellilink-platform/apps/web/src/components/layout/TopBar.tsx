@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, LogOut, Bell, Radio, Sparkles, RefreshCw, CheckCircle2, ShieldAlert, Cpu, Network, Check, X } from 'lucide-react';
+import { Search, LogOut, Bell, Radio, Sparkles, RefreshCw, CheckCircle2, ShieldAlert, Cpu, Network, Check, X, Sun, Moon } from 'lucide-react';
 import { getCurrentUser, logout } from '../../lib/auth';
 import { apiClient } from '../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,10 +14,27 @@ export function TopBar() {
   const [showModal, setShowModal] = useState(false);
   const [bootstrapResult, setBootstrapResult] = useState<any>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     setUser(getCurrentUser());
+    const isDark = document.documentElement.classList.contains('dark');
+    setTheme(isDark ? 'dark' : 'light');
   }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('vmonitor-theme', 'dark');
+      setTheme('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      localStorage.setItem('vmonitor-theme', 'light');
+      setTheme('light');
+    }
+  };
 
   const handleFullLiveBootstrap = async () => {
     setBootstrapping(true);
@@ -83,6 +100,25 @@ export function TopBar() {
           </button>
 
           <div className="h-5 w-[1px] bg-[#1E293B] mx-1" />
+
+          {/* Theme Switcher Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#1E293B] hover:bg-slate-800/20 text-slate-300 hover:text-white transition-all text-xs"
+            title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to White Theme'}
+          >
+            {theme === 'light' ? (
+              <>
+                <Moon className="w-3.5 h-3.5 text-blue-500" />
+                <span className="font-medium text-[11px]">Dark</span>
+              </>
+            ) : (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-medium text-[11px]">White</span>
+              </>
+            )}
+          </button>
 
           <button className="relative p-2 rounded-lg hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 transition-colors">
             <Bell className="w-4 h-4" />
