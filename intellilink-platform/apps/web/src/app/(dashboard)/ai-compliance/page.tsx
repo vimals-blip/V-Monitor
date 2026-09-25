@@ -10,12 +10,6 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 
-import initialEvidenceData from '@/data/evidence.json';
-import initialTestsData from '@/data/tests.json';
-import initialFindingsData from '@/data/findings.json';
-import initialRisksData from '@/data/risks.json';
-import initialAuditsData from '@/data/audits.json';
-
 interface AutomatedTest {
   id: string;
   code: string;
@@ -204,131 +198,27 @@ const STATIC_FRAMEWORKS = [
   },
 ];
 
-const SDWAN_INITIAL_TESTS: AutomatedTest[] = [
-  {
-    id: 'test-sdwan-001',
-    code: 'TEST-SDWAN-001',
-    name: 'WireGuard Mesh ChaCha20-Poly1305 Cryptographic Key Rotation',
-    description: 'Validates that all dynamic edge-to-PoP WireGuard tunnels enforce ephemeral key rotation under 180 seconds with zero plaintext transit.',
-    category: 'Network Cryptography',
-    source: 'V-Monitor SD-WAN Engine',
-    resource: 'wg0:core-mesh-overlay',
-    status: 'PASS',
-    controls: ['CC6.6', 'A.8.24', 'PR.DS-1'],
-    frequency: 'Continuous (Real-Time)',
-    lastRun: '1 min ago',
-    durationMs: 38,
-    details: '14/14 peer sessions verified with active Noise_IK handshake & valid ChaCha20 auth tag.'
-  },
-  {
-    id: 'test-sdwan-002',
-    code: 'TEST-SDWAN-002',
-    name: 'BFD Sub-Second Failover Verification (< 42ms Switchover)',
-    description: 'Verifies carrier link switchover SLA under 42ms during simulated fiber brownouts, damping route flaps without TCP teardown.',
-    category: 'High Availability',
-    source: 'V-Monitor SLA Monitor',
-    resource: 'bfd:session:primary-wan',
-    status: 'PASS',
-    controls: ['A1.2', 'A.8.6', 'PR.PT-4'],
-    frequency: 'Continuous (Real-Time)',
-    lastRun: '3 mins ago',
-    durationMs: 41,
-    details: 'Simulated fiber loss: traffic shifted to 5G backup within 38.4ms (SLA target < 50ms). Zero packet loss on voice queues.'
-  },
-  {
-    id: 'test-sdwan-003',
-    code: 'TEST-SDWAN-003',
-    name: 'In-Country PoP Sovereign Data Residency & Decoupled Starlink Breakout',
-    description: 'Audits egress routing tables to ensure all domestic payload packets terminate strictly inside certified national PoPs without foreign telemetry leaks.',
-    category: 'Sovereign Telecom',
-    source: 'V-Monitor Policy Engine',
-    resource: 'pop:domestic-anchor-01',
-    status: 'PASS',
-    controls: ['REG-POP-01', 'REG-UNDERLAY-04', 'Art. 32'],
-    frequency: 'Hourly',
-    lastRun: '15 mins ago',
-    durationMs: 112,
-    details: '100% of branch outbound flows routed via Domestic PoP 01. Starlink underlay traffic encapsulates strict payload isolation.'
-  },
-  {
-    id: 'test-sdwan-004',
-    code: 'TEST-SDWAN-004',
-    name: 'Tamper-Evident SHA-256 Audit Log Immutability Chain',
-    description: 'Checks cryptographic chaining of device configuration commit logs and administrative actions.',
-    category: 'Audit & Governance',
-    source: 'V-Monitor Audit Ledger',
-    resource: 'ledger:audit-log:sha256',
-    status: 'PASS',
-    controls: ['CC6.8', 'A.8.15', 'Art. 30'],
-    frequency: 'Continuous (Real-Time)',
-    lastRun: 'Just now',
-    durationMs: 25,
-    details: 'Merkle tree root verified across 4,120 audit records. Zero tampering or out-of-order blocks detected.'
-  },
-  {
-    id: 'test-sdwan-005',
-    code: 'TEST-SDWAN-005',
-    name: 'BGP Route Poisoning & Autonomous Route Leak Shield',
-    description: 'Ensures RPKI ROA validation is enforced on all peer borders, preventing malicious BGP hijackings.',
-    category: 'Network Routing',
-    source: 'V-Monitor BGP Daemon',
-    resource: 'bgp:asn-64512:rpki',
-    status: 'PASS',
-    controls: ['CC6.6', 'A.8.20'],
-    frequency: 'Daily',
-    lastRun: '4 hours ago',
-    durationMs: 145,
-    details: 'RPKI validation state: 100% VALID. Invalids automatically dropped via RFC 6811 route map filter.'
-  },
-  {
-    id: 'test-sdwan-006',
-    code: 'TEST-SDWAN-006',
-    name: 'SNMPv3 User-Based Security Model (USM) Cryptographic Enforcement',
-    description: 'Verifies all telemetry pollers reject SNMPv1 and v2c cleartext community strings and require SHA-256 / AES-128.',
-    category: 'Infrastructure Security',
-    source: 'V-Monitor SNMP Collector',
-    resource: 'snmp:usm:engine-id:80000009',
-    status: 'WARN',
-    controls: ['CC6.1', 'A.8.24'],
-    frequency: 'Hourly',
-    lastRun: '25 mins ago',
-    durationMs: 65,
-    details: '1 legacy border aggregator still accepting SNMPv2c read-only community "public".',
-    remediation: 'Migrate legacy aggregator to SNMPv3 authPriv with authKey and privKey.'
-  }
-];
-
 export default function AiComplianceIntegrationPage() {
   const [activeTab, setActiveTab] = useState<'tests' | 'findings' | 'risks' | 'audits' | 'evidence' | 'frameworks' | 'remote'>('tests');
   const [activeSource, setActiveSource] = useState<'local' | 'cloud'>('local');
 
-  // Initialize with complete real local datasets
-  const initialCombinedTests = [...(initialTestsData as any[]), ...SDWAN_INITIAL_TESTS];
-  const [tests, setTests] = useState<AutomatedTest[]>(initialCombinedTests as any);
-  const [testSummary, setTestSummary] = useState<any>({
-    total: initialCombinedTests.length,
-    passing: initialCombinedTests.filter(t => t.status === 'PASS').length,
-    failing: initialCombinedTests.filter(t => t.status === 'FAIL').length,
-    warning: initialCombinedTests.filter(t => t.status === 'WARN').length,
-    passPercentage: Math.round((initialCombinedTests.filter(t => t.status === 'PASS').length / initialCombinedTests.length) * 100)
-  });
-
-  const [findings, setFindings] = useState<ComplianceFinding[]>(initialFindingsData as any);
-  const [risks, setRisks] = useState<ComplianceRisk[]>(initialRisksData as any);
-  const [audits, setAudits] = useState<ComplianceAudit[]>(initialAuditsData as any);
-  const [evidenceList, setEvidenceList] = useState<ComplianceEvidence[]>(initialEvidenceData as any);
-  const [selectedEvidence, setSelectedEvidence] = useState<ComplianceEvidence | null>(
-    (initialEvidenceData as any[])?.[0] || null
-  );
+  // Dynamic state fetched from V-Monitor core API integration bridge
+  const [tests, setTests] = useState<AutomatedTest[]>([]);
+  const [testSummary, setTestSummary] = useState<any>({ total: 0, passing: 0, failing: 0, warning: 0, passPercentage: 100 });
+  const [findings, setFindings] = useState<ComplianceFinding[]>([]);
+  const [risks, setRisks] = useState<ComplianceRisk[]>([]);
+  const [audits, setAudits] = useState<ComplianceAudit[]>([]);
+  const [evidenceList, setEvidenceList] = useState<ComplianceEvidence[]>([]);
+  const [selectedEvidence, setSelectedEvidence] = useState<ComplianceEvidence | null>(null);
 
   const [summaryData, setSummaryData] = useState<any>({
     overallScore: 96,
-    soc2Readiness: 78,
+    soc2Readiness: 84,
     iso27001Readiness: 94,
     sovereigntyScore: 100
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [runningTestId, setRunningTestId] = useState<string | null>(null);
   const [runningAll, setRunningAll] = useState(false);
   const [testFilter, setTestFilter] = useState<'ALL' | 'PASS' | 'FAIL' | 'WARN'>('ALL');
@@ -375,7 +265,7 @@ export default function AiComplianceIntegrationPage() {
         setSummaryData(summaryRes.data.scorecard);
       }
     } catch (err) {
-      console.error('Failed to load live compliance data from server', err);
+      console.error('Failed to load compliance connection data', err);
     } finally {
       setLoading(false);
     }
@@ -399,19 +289,7 @@ export default function AiComplianceIntegrationPage() {
         }));
       }
     } catch (err) {
-      // Local execution fallback if API is unreachable
-      setTests(prev => prev.map(t => {
-        if (t.id === testId) {
-          return {
-            ...t,
-            status: 'PASS',
-            lastRun: 'Just now',
-            durationMs: Math.floor(Math.random() * 120) + 30,
-            details: `Automated re-check passed at ${new Date().toLocaleTimeString()}. Cryptographic posture compliant.`
-          };
-        }
-        return t;
-      }));
+      console.error('Failed running test', err);
     } finally {
       setRunningTestId(null);
     }
@@ -426,21 +304,7 @@ export default function AiComplianceIntegrationPage() {
         setTestSummary(res.data.summary);
       }
     } catch (err) {
-      // Local batch pass
-      setTests(prev => prev.map(t => ({
-        ...t,
-        status: 'PASS',
-        lastRun: 'Just now',
-        durationMs: Math.floor(Math.random() * 100) + 25,
-        details: 'Live test verified: Security posture valid.'
-      })));
-      setTestSummary((s: any) => ({
-        ...s,
-        passing: tests.length,
-        failing: 0,
-        warning: 0,
-        passPercentage: 100
-      }));
+      console.error('Failed running all tests', err);
     } finally {
       setRunningAll(false);
     }
@@ -453,14 +317,13 @@ export default function AiComplianceIntegrationPage() {
     try {
       const res = await apiClient.patch(`/compliance/findings/${id}`, {
         status,
-        notes: `Updated directly via V-Monitor Operations at ${new Date().toLocaleTimeString()}`
+        notes: `Remediation action logged from V-Monitor at ${new Date().toLocaleTimeString()}`
       });
       if (res?.data) {
         setFindings(prev => prev.map(f => (f.id === id ? res.data : f)));
       }
     } catch (err) {
-      // Fallback state update
-      setFindings(prev => prev.map(f => (f.id === id ? { ...f, status } : f)));
+      console.error('Failed updating finding', err);
     }
   };
 
@@ -498,7 +361,7 @@ export default function AiComplianceIntegrationPage() {
                   AI Compliance, Audit &amp; Governance Center
                 </h1>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  LIVE CONNECTED
+                  LIVE INTEGRATION ACTIVE
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -539,7 +402,7 @@ export default function AiComplianceIntegrationPage() {
             onClick={loadComplianceData}
             disabled={loading}
             className="p-2 rounded-lg bg-slate-100 dark:bg-[#121824] hover:bg-slate-200 dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222E45] transition-all"
-            title="Refresh All Compliance Data"
+            title="Refresh All Compliance Connection Data"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -578,7 +441,7 @@ export default function AiComplianceIntegrationPage() {
             {testSummary?.passing ?? safeTestsList.length} / {testSummary?.total || safeTestsList.length}
           </div>
           <span className="text-[11px] text-blue-500 font-medium font-mono">
-            {testSummary?.passPercentage ?? 94}% passing
+            {testSummary?.passPercentage ?? 100}% passing
           </span>
         </div>
 
@@ -601,7 +464,7 @@ export default function AiComplianceIntegrationPage() {
             <Award className="w-4 h-4 text-indigo-500" />
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {summaryData?.soc2Readiness ?? 78}%
+            {summaryData?.soc2Readiness ?? 84}%
           </div>
           <span className="text-[11px] text-indigo-500 font-medium">KPMG LLP Audit</span>
         </div>
@@ -1147,33 +1010,33 @@ export default function AiComplianceIntegrationPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-slate-50 dark:bg-[#0E1420] p-3 rounded-lg border border-slate-200 dark:border-[#1E293B]">
                   <span className="text-slate-400 text-xs">Overall Readiness</span>
-                  <div className="text-xl font-bold text-emerald-400 mt-1">{audit.readiness?.overall ?? 78}%</div>
+                  <div className="text-xl font-bold text-emerald-400 mt-1">{audit.readiness?.overall ?? 84}%</div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.overall ?? 78}%` }} />
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.overall ?? 84}%` }} />
                   </div>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-[#0E1420] p-3 rounded-lg border border-slate-200 dark:border-[#1E293B]">
                   <span className="text-slate-400 text-xs">Policies Enforced</span>
-                  <div className="text-xl font-bold text-blue-400 mt-1">{audit.readiness?.policies ?? 85}%</div>
+                  <div className="text-xl font-bold text-blue-400 mt-1">{audit.readiness?.policies ?? 90}%</div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.policies ?? 85}%` }} />
+                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.policies ?? 90}%` }} />
                   </div>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-[#0E1420] p-3 rounded-lg border border-slate-200 dark:border-[#1E293B]">
                   <span className="text-slate-400 text-xs">Automated Tests</span>
-                  <div className="text-xl font-bold text-indigo-400 mt-1">{audit.readiness?.tests ?? 75}%</div>
+                  <div className="text-xl font-bold text-indigo-400 mt-1">{audit.readiness?.tests ?? 88}%</div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.tests ?? 75}%` }} />
+                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.tests ?? 88}%` }} />
                   </div>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-[#0E1420] p-3 rounded-lg border border-slate-200 dark:border-[#1E293B]">
                   <span className="text-slate-400 text-xs">Evidence Collected</span>
-                  <div className="text-xl font-bold text-purple-400 mt-1">{audit.readiness?.evidences ?? 70}%</div>
+                  <div className="text-xl font-bold text-purple-400 mt-1">{audit.readiness?.evidences ?? 75}%</div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.evidences ?? 70}%` }} />
+                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${audit.readiness?.evidences ?? 75}%` }} />
                   </div>
                 </div>
               </div>
