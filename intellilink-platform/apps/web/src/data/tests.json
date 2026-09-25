@@ -1,0 +1,189 @@
+[
+  {
+    "id": "test-1",
+    "code": "SEC-AWS-001",
+    "name": "S3 Buckets Enforce Default KMS Encryption",
+    "description": "Verifies that all active Amazon S3 buckets have default encryption enabled using AES-256 or AWS KMS customer-managed keys.",
+    "category": "Data Protection",
+    "source": "AWS",
+    "resource": "arn:aws:s3:::prod-customer-data-backups",
+    "status": "PASS",
+    "controls": [
+      "CC6.7",
+      "PR.DS-1",
+      "A.8.24"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "5 mins ago",
+    "durationMs": 420,
+    "details": "Verified 8/8 buckets with SSE-KMS enabled."
+  },
+  {
+    "id": "test-2",
+    "code": "SEC-AWS-002",
+    "name": "S3 Public Access Block Configured",
+    "description": "Ensures public access blocks are enabled at the bucket level and account level, preventing accidental public exposure.",
+    "category": "Cloud Security",
+    "source": "AWS",
+    "resource": "arn:aws:s3:::*",
+    "status": "PASS",
+    "controls": [
+      "CC6.6",
+      "A.8.20"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "5 mins ago",
+    "durationMs": 380,
+    "details": "All 4 public access block settings (Acls, Policies) active."
+  },
+  {
+    "id": "test-3",
+    "code": "SEC-AWS-003",
+    "name": "IAM Root Account Has No Active Access Keys",
+    "description": "Checks that the AWS Root account has no active access keys generated, requiring console access with hardware MFA only.",
+    "category": "Identity & Access",
+    "source": "AWS",
+    "resource": "arn:aws:iam:::root",
+    "status": "PASS",
+    "controls": [
+      "CC6.1",
+      "A.9.1.1"
+    ],
+    "frequency": "Hourly",
+    "lastRun": "20 mins ago",
+    "durationMs": 190,
+    "details": "Root access keys: 0 found. Compliant."
+  },
+  {
+    "id": "test-4",
+    "code": "SEC-AWS-004",
+    "name": "IAM Users Enforce Hardware or Virtual MFA",
+    "description": "Audits all IAM console users to verify multi-factor authentication is active and required for all console logins.",
+    "category": "Identity & Access",
+    "source": "AWS",
+    "resource": "arn:aws:iam:::user/*",
+    "status": "FAIL",
+    "controls": [
+      "CC6.1",
+      "A.9.2.1",
+      "PR.AC-1"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "12 mins ago",
+    "durationMs": 510,
+    "details": "3 users detected without MFA: service_account_ci, legacy_admin, new_hire_john.",
+    "remediation": "Attach IAM policy requiring MFA or configure federated SSO via Okta."
+  },
+  {
+    "id": "test-5",
+    "code": "SEC-GH-001",
+    "name": "GitHub Main Branch Disallows Force Pushes",
+    "description": "Validates that force pushes are explicitly disabled on production repositories to maintain immutable audit history.",
+    "category": "Code & Change",
+    "source": "GitHub",
+    "resource": "github.com/org/core-platform:main",
+    "status": "PASS",
+    "controls": [
+      "CC8.1",
+      "PR.IP-1"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "Just now",
+    "durationMs": 230,
+    "details": "Branch protection rule allow_force_pushes = false verified."
+  },
+  {
+    "id": "test-6",
+    "code": "SEC-GH-002",
+    "name": "GitHub Pull Requests Require Code Owner Approval",
+    "description": "Enforces that pull requests touching production paths require at least 1 approving peer review before merging.",
+    "category": "Code & Change",
+    "source": "GitHub",
+    "resource": "github.com/org/core-platform:CODEOWNERS",
+    "status": "PASS",
+    "controls": [
+      "CC8.1",
+      "A.8.32"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "Just now",
+    "durationMs": 310,
+    "details": "Min review count = 1, dismiss_stale_reviews = true."
+  },
+  {
+    "id": "test-7",
+    "code": "SEC-GW-001",
+    "name": "Google Workspace 2-Step Verification Enforced",
+    "category": "Identity & Access",
+    "description": "Verifies organization-wide 2-Step Verification enforcement for all active Google Workspace accounts.",
+    "source": "Google Workspace",
+    "resource": "admin.google.com/security/2sv",
+    "status": "PASS",
+    "controls": [
+      "CC6.1",
+      "CC6.2",
+      "A.9.4.2"
+    ],
+    "frequency": "Daily",
+    "lastRun": "1 hour ago",
+    "durationMs": 640,
+    "details": "52/52 active accounts enrolled in 2SV."
+  },
+  {
+    "id": "test-8",
+    "code": "SEC-SL-001",
+    "name": "Slack Dedicated Incident Channels Active",
+    "category": "Incident Management",
+    "description": "Verifies that dedicated, monitored incident response channels exist for P1/P2 security coordination.",
+    "source": "Slack",
+    "resource": "slack://channel/#incident-response",
+    "status": "PASS",
+    "controls": [
+      "CC7.3",
+      "CC7.4",
+      "A.16.1.2"
+    ],
+    "frequency": "Daily",
+    "lastRun": "2 hours ago",
+    "durationMs": 290,
+    "details": "#incident-response and #security-alerts active with 12 incident responders."
+  },
+  {
+    "id": "test-9",
+    "code": "SEC-NET-001",
+    "name": "Public Endpoints Require TLS 1.2+ with Perfect Forward Secrecy",
+    "category": "Data Protection",
+    "description": "Scans public API gateway and web edge endpoints to verify SSL/TLS configurations reject deprecated protocols.",
+    "source": "System",
+    "resource": "https://api.acme.com",
+    "status": "PASS",
+    "controls": [
+      "CC6.7",
+      "PR.DS-2",
+      "A.8.20"
+    ],
+    "frequency": "Continuous (Real-Time)",
+    "lastRun": "15 mins ago",
+    "durationMs": 780,
+    "details": "TLS 1.3 negotiated with ECDHE cipher suites."
+  },
+  {
+    "id": "test-10",
+    "code": "SEC-DB-001",
+    "name": "PostgreSQL Automated Daily Backups and Retention",
+    "category": "Data Protection",
+    "description": "Verifies that production database snapshots are captured daily with at least 30-day point-in-time recovery.",
+    "source": "AWS",
+    "resource": "arn:aws:rds:us-east-1:123456789012:db:prod-db",
+    "status": "WARN",
+    "controls": [
+      "A.12.3.1",
+      "CC7.5"
+    ],
+    "frequency": "Daily",
+    "lastRun": "3 hours ago",
+    "durationMs": 440,
+    "details": "Daily backups enabled (retention 14 days). Recommended minimum for SOC 2 Type II is 30 days.",
+    "remediation": "Increase backup_retention_period from 14 to 30 in RDS cluster configuration."
+  }
+]
