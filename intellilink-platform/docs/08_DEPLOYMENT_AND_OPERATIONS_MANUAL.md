@@ -206,7 +206,7 @@ Run this quick command matrix to confirm end-to-end functionality across all lay
 
 ```bash
 # 1. API Health Check
-curl -s http://127.0.0.1:3001/api/v1/health | jq .
+curl -s http://127.0.0.1:3001/health | jq .
 
 # 2. AI Engine Health Check
 curl -s http://127.0.0.1:8100/health | jq .
@@ -214,8 +214,8 @@ curl -s http://127.0.0.1:8100/health | jq .
 # 3. Web NOC Frontend HTTP Response
 curl -I http://127.0.0.1:3000
 
-# 4. Live ARP / Device Discovery Count
-curl -s http://127.0.0.1:3001/api/v1/network/devices | jq '.length'
+# 4. Live Edge Agent Installer Verification
+curl -s http://127.0.0.1:3001/api/v1/network-discovery/agent/install.sh | head -n 5
 
 # 5. MySQL Connection Test
 mysql -u vmonitor_user -p -e "SELECT count(*) AS total_telemetry FROM intellilink_db.telemetry_records;"

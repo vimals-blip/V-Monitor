@@ -73,7 +73,7 @@ The complete, authoritative documentation suite is maintained in [`docs/`](docs/
 
 ```bash
 # Verify API Health
-curl -s http://localhost:3001/api/v1/health | jq .
+curl -s http://localhost:3001/health | jq .
 
 # Verify AI Engine Health
 curl -s http://localhost:8100/health | jq .

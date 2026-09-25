@@ -47,13 +47,13 @@ To verify the platform is fully operational before a client meeting or deploymen
 systemctl status intellilink-api intellilink-web intellilink-ai --no-pager
 
 # 2. Query REST API Health
-curl -s http://127.0.0.1:3001/api/v1/health | jq .
+curl -s http://127.0.0.1:3001/health | jq .
 
 # 3. Test Web NOC UI Reachability
 curl -I http://127.0.0.1:3000
 
-# 4. Check Real Hardware Interface Discovery
-curl -s http://127.0.0.1:3001/api/v1/network/interfaces | jq .
+# 4. Check Edge Agent Installer Availability
+curl -s http://127.0.0.1:3001/api/v1/network-discovery/agent/install.sh | head -n 5
 ```
 
 ---
