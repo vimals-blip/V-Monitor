@@ -37,6 +37,7 @@ The complete, authoritative documentation suite is maintained in [`docs/`](docs/
 | [**06. Architecture & System Design**](docs/06_ARCHITECTURE_AND_SYSTEM_DESIGN.md) | Technical system architecture, Forwarding vs Control Plane, NestJS microservices, MySQL 8 schema, Next.js 14 NOC. |
 | [**07. API & Integration Reference**](docs/07_API_AND_INTEGRATION_REFERENCE.md) | REST API endpoints, DTO contracts, dynamic client host resolution, and mTLS WebSocket telemetry streams. |
 | [**08. Deployment & Operations Manual**](docs/08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md) | Production bare-metal installation, systemd unit files, environment configurations, backup routines, and troubleshooting runbooks. |
+| [**09. Architecture & UI Feature Mapping**](docs/09_ARCHITECTURE_CAPABILITY_AND_FEATURE_MAPPING.md) | Target architecture component audit, exact UI sidebar tabs and URL routes, edge agent operation, and transport failover. |
 
 ---
 

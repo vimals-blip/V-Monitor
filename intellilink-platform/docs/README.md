@@ -18,7 +18,8 @@ docs/
 ├── 05_CLIENT_DEMO_AND_SCREEN_SHARE_RUNBOOK.md            # Step-by-step live demonstration runbook for client presentations
 ├── 06_ARCHITECTURE_AND_SYSTEM_DESIGN.md                  # Control vs data plane, microservices, MySQL 8, FastAPI, WebSockets
 ├── 07_API_AND_INTEGRATION_REFERENCE.md                   # REST API schemas, WebSocket mTLS bus, SNMP/NETCONF bindings
-└── 08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md                # Bare-metal setup, systemd units, backup routines, troubleshooting
+├── 08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md                # Bare-metal setup, systemd units, backup routines, troubleshooting
+└── 09_ARCHITECTURE_CAPABILITY_AND_FEATURE_MAPPING.md     # Target architecture audit, component status, and UI tab mapping
 ```
 
 ---
@@ -35,6 +36,7 @@ docs/
 | **06** | [**Architecture & System Design**](06_ARCHITECTURE_AND_SYSTEM_DESIGN.md) | Software Engineers, System Architects | • Forwarding Plane vs Control Plane Separation<br>• Microservices Topology (NestJS, FastAPI, Next.js 14)<br>• MySQL 8.0 Microsecond Time-Series Schema<br>• Event-Driven WebSocket Bus & Distributed State |
 | **07** | [**API & Integration Reference**](07_API_AND_INTEGRATION_REFERENCE.md) | Integration Engineers, DevOps | • Complete REST API Catalog (`/api/v1/*`)<br>• Dynamic Host Binding Logic (avoiding connection errors)<br>• WebSocket Message Payloads & Subscriptions<br>• DTO Specifications and Code Snippets |
 | **08** | [**Deployment & Operations Manual**](08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md) | SREs, Systems Administrators | • Production Ubuntu 22.04 LTS Bare-Metal Setup<br>• Environment Configurations (`.env` specifications)<br>• systemd Unit Files & Automated Recovery<br>• Database Backups & Runbooks for Connection/Bootstrap Errors |
+| **09** | [**Architecture & UI Feature Mapping**](09_ARCHITECTURE_CAPABILITY_AND_FEATURE_MAPPING.md) | Network Engineers, Product Owners, NOC Ops | • Complete Target Architecture Component Audit<br>• Exact UI Sidebar Group, Tab Name & URL Mapping<br>• Edge Agent Operation (Cisco GuestShell, MikroTik, Linux)<br>• Multi-WAN Underlay Orchestration (Fiber, 5G, Starlink) |
 
 ---
 
