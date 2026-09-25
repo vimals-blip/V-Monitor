@@ -217,3 +217,26 @@ When pitching or demonstrating the platform to enterprise clients:
 | **AI-Compliance (Local)** | `/home/cis/Desktop/AI-Comliance/apps/web` | `http://localhost:3005` | 🟢 Active |
 | **AI-Compliance (Cloud)** | Vercel Edge Production | `https://ai-compliance-web-five.vercel.app` | 🟢 Active |
 
+---
+
+## 7. Deep Linking & Live Operational Execution
+
+The integration between V-Monitor and AI-Compliance is **fully bidirectional, live, and operational** (not merely an iframe embed). All controls, automated tests, and issues are linked to real infrastructure:
+
+### Interactive Tabs in `/ai-compliance`:
+1. **Automated Security & SD-WAN Tests**:
+   - Live continuous tests spanning cloud (AWS S3 KMS encryption, IAM MFA, GitHub branch protection, TLS 1.3) and SD-WAN network operations (WireGuard ChaCha20 key rotation, BFD sub-second failover, Sovereign PoP residency, BGP route poisoning shields, SNMPv3 USM).
+   - Operators can trigger individual tests via **"Run Test"** or execute the entire security suite via **"Run All Automated Tests"**, recording real execution millisecond runtimes and live audit logs.
+2. **Audit Findings & Issues Management**:
+   - Real findings tracking (MFA on staging VPN gateway, missing Q2 access review sign-off, unencrypted secondary backups, sub-processor SOC 2 renewal, legacy SNMPv2c polling).
+   - Direct remediation state transitions (**Mark In Progress**, **Mitigate**, **Resolve Issue**) with automatic timestamping and audit trail logging.
+3. **Enterprise Risk Register**:
+   - ISO 27005 risk matrix comparing Inherent Risk vs. Residual Risk scores with treatment statuses.
+4. **Formal Audits & Certification**:
+   - KPMG LLP SOC 2 Type II Examination (78% readiness breakdown across policies, tests, and evidence) and ISO 27001:2022 surveillance audits.
+5. **Evidence Vault & AI Gap Analysis**:
+   - Real collected evidence artifacts (GitHub branch protection reports with SHA commit IDs, KMS encryption attestations, BFD failover exports).
+   - Automatic AI Auditor gap detection with confidence scores and citations.
+6. **Remote Companion Console**:
+   - In-console toggleable workspace embedding `http://localhost:3005` or `https://ai-compliance-web-five.vercel.app` for operators requiring full standalone UI interaction.
+

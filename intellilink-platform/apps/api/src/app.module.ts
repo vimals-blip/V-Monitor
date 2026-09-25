@@ -48,6 +48,7 @@ import { SnmpModule } from './modules/snmp/snmp.module';
 import { SyslogModule } from './modules/syslog/syslog.module';
 import { NetflowModule } from './modules/netflow/netflow.module';
 import { DeviceAutomationModule } from './modules/device-automation/device-automation.module';
+import { ComplianceBridgeModule } from './modules/compliance-bridge/compliance-bridge.module';
 
 @Module({
   imports: [
@@ -117,6 +118,7 @@ import { DeviceAutomationModule } from './modules/device-automation/device-autom
     SyslogModule,
     NetflowModule,
     DeviceAutomationModule,
+    ComplianceBridgeModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
