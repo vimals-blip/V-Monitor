@@ -3,13 +3,16 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { SyslogViewer } from '../../../components/monitoring/SyslogViewer';
+import { NetflowViewer } from '../../../components/monitoring/NetflowViewer';
 import {
   Activity, Radio, Cpu, Network, Server, HardDrive,
   RefreshCw, Wifi, ArrowUpRight, CheckCircle2, ShieldCheck, Zap,
-  Bot, TrendingUp, AlertTriangle
+  Bot, TrendingUp, AlertTriangle, Terminal
 } from 'lucide-react';
 
 export default function MonitoringPage() {
+  const [activeView, setActiveView] = useState<'telemetry' | 'syslog' | 'netflow'>('telemetry');
   const { data: telemetry, isLoading, refetch } = useQuery({
     queryKey: ['fabric-telemetry-overview'],
     queryFn: async () => {
@@ -69,7 +72,51 @@ export default function MonitoringPage() {
         </div>
       </div>
 
-      {/* Host Kernel Hardware Telemetry */}
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#222E45] pb-2 flex-wrap">
+        <button
+          onClick={() => setActiveView('telemetry')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            activeView === 'telemetry'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          <span>Live Telemetry Fabric</span>
+        </button>
+        <button
+          onClick={() => setActiveView('syslog')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            activeView === 'syslog'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Terminal className="w-3.5 h-3.5" />
+          <span>Syslog Daemon (RFC 5424)</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        </button>
+        <button
+          onClick={() => setActiveView('netflow')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            activeView === 'netflow'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Network className="w-3.5 h-3.5" />
+          <span>NetFlow / IPFIX Flow Collector</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        </button>
+      </div>
+
+      {activeView === 'syslog' && <SyslogViewer />}
+      {activeView === 'netflow' && <NetflowViewer />}
+
+      {activeView === 'telemetry' && (
+        <div className="space-y-6">
+          {/* Host Kernel Hardware Telemetry */}
       {host && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4">
@@ -458,6 +505,8 @@ export default function MonitoringPage() {
           })}
         </div>
       </div>
+    </div>
+  )}
     </div>
   );
 }

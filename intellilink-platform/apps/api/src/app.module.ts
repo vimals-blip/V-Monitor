@@ -44,6 +44,10 @@ import { ProvidersModule } from './providers/providers.module';
 import { ProvisioningModule } from './modules/provisioning/provisioning.module';
 import { AiModule } from './modules/ai/ai.module';
 import { NetworkDiscoveryModule } from './modules/network-discovery/network-discovery.module';
+import { SnmpModule } from './modules/snmp/snmp.module';
+import { SyslogModule } from './modules/syslog/syslog.module';
+import { NetflowModule } from './modules/netflow/netflow.module';
+import { DeviceAutomationModule } from './modules/device-automation/device-automation.module';
 
 @Module({
   imports: [
@@ -109,6 +113,10 @@ import { NetworkDiscoveryModule } from './modules/network-discovery/network-disc
     ProvisioningModule,
     AiModule,
     NetworkDiscoveryModule,
+    SnmpModule,
+    SyslogModule,
+    NetflowModule,
+    DeviceAutomationModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

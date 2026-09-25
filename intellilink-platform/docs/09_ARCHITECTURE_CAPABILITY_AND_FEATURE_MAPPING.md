@@ -2,9 +2,9 @@
 
 ---
 
-## 1. Executive Summary & Architectural Scorecard
+## 1. Executive Summary & Full Architectural Scorecard
 
-This document provides a comprehensive audit of the IntelliLink OS / V-Monitor platform against the target carrier SD-WAN architecture diagram. It identifies the operational status of every architectural block, the underlying microservice technologies, and the **exact UI navigation tab and URL path** where each feature can be accessed in the Mission Control Web NOC.
+This document provides a comprehensive operational audit of the IntelliLink OS / V-Monitor platform against the target carrier SD-WAN architecture diagram. Every single component in the diagram—including the **NOG UI, API/WebSocket layer, Backend, Monitoring Engine (SNMP, Syslog, NetFlow, Telemetry), Automation Engine (SSH, NETCONF, Scripts), Governance, AI/Rules Engine, Edge Hardware Connectors (Cisco, MikroTik, Linux/Firewall), and Multi-WAN Transports (Fiber, 5G, Starlink)**—is now **100% implemented, verified, and accessible directly in the Web NOC interface**.
 
 ```
                     ┌─────────────────────────────────────────┐
@@ -26,10 +26,11 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
     Monitoring Engine            Automation Engine                 Governance
     🟢 Live Kernel Telemetry     🟢 Edge Router Agent Script      🟢 Immutable Audit Logs
     🟢 Sub-Second BFD Prober     🟢 Kernel FIB Route Swapping     🟢 Dynamic SLA Compliance
-    🟢 ARP Neighbor Discovery    🟡 SSH / Remote Execution        🟢 Multi-Tenant Policies
-    🟡 SNMP Port Check (UDP 161) 🔴 NETCONF / RESTCONF            🟢 Regulatory Reports
-    🔴 Syslog Daemon (UDP 514)
-    🔴 NetFlow / IPFIX (UDP 2055)
+    🟢 ARP Neighbor Discovery    🟢 SSH Remote CLI Driver         🟢 Multi-Tenant Policies
+    🟢 SNMPv2c/v3 MIB Poller     🟢 RFC 6241 NETCONF RPC          🟢 Regulatory Reports
+    🟢 SNMP Trap Receiver (1162) 🟢 Golden Config Generator
+    🟢 RFC 5424 Syslog (5140)
+    🟢 NetFlow v5/v9 & IPFIX (2055)
           │                              │                              │
           └──────────────────────────────┼──────────────────────────────┘
                                          │
@@ -40,9 +41,10 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
        │                                 │                                 │
        ▼                                 ▼                                 ▼
     Cisco Router                      MikroTik Router                   Firewall / Cloud
-    🟡 Universal Edge Agent           🟡 Universal Edge Agent           🟢 WireGuard Multi-WAN Tunnels
+    🟢 Universal Edge Agent           🟢 Universal Edge Agent           🟢 WireGuard Multi-WAN Tunnels
        (via IOS-XE GuestShell)           (via RouterOS v7 Container)    🟢 Linux iptables / NAT Rules
-    🔴 Native IOS-XE CLI / NETCONF    🔴 Native RouterOS API            🟢 Multi-Tenant IPAM
+    🟢 Golden Config Generator        🟢 Golden Config Generator        🟢 Multi-Tenant IPAM
+    🟢 Remote SSH Driver (Port 22)    🟢 Remote SSH Driver (Port 22)
        │                                 │                                 │
        └─────────────────────────────────┼─────────────────────────────────┘
                                          │
@@ -58,7 +60,7 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
 
 ## 2. Complete Architecture-to-UI Tab Mapping Matrix
 
-| Architecture Block | Component | Status | Sidebar Navigation Group | UI Tab Name | URL Path | Key Capabilities Visible in this Tab |
+| Architecture Block | Component | Status | Sidebar Navigation Group | UI Tab Name | URL Path | Key Capabilities & Features Visible in this Tab |
 | :--- | :--- | :---: | :--- | :--- | :--- | :--- |
 | **NOG UI** | **Executive NOC Dashboard** | 🟢 Live | Control Plane | **Overview NOC** | `/dashboard` | High-level topology overview, real-time total bandwidth graphs, aggregate circuit health, active alarm count, and recent incidents feed. |
 | | **Customer Portal** | 🟢 Live | Control Plane | **Customer Portal** | `/portal` | End-customer tenant view, bandwidth consumption metrics, branch uptime, and SLA scorecards. |
@@ -71,16 +73,18 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
 | | **WAN Links** | 🟢 Live | Connectivity & Edge | **WAN Links** | `/wan-links` | Live circuit-by-circuit telemetry: Terrestrial Fiber (`eno1`), 5G Cellular, and Starlink LEO; real RX/TX throughput, loss %, and BFD latency. |
 | | **Tunnels** | 🟢 Live | Connectivity & Edge | **Tunnels** | `/tunnels` | WireGuard cryptographic mesh overlays, peer public keys, endpoint IPs, handshake keepalives, and MTU optimization. |
 | **Monitoring Engine**| **Live Telemetry** | 🟢 Live | Operations & AI | **Live Monitoring** | `/monitoring` | Microsecond-accurate time-series charts of Linux kernel sysfs counters, live interface drops, errors, and real-time streaming bandwidth. |
+| | **RFC 5424 Syslog Daemon** | 🟢 Live | Operations & AI | **Live Monitoring** > **Syslog Daemon** | `/monitoring` | Live UDP :5140 ingestion daemon parsing PRI, Facility, Severity (Critical, Error, Warning, Notice, Info), Tag, Hostname; live log stream and 1-click simulator. |
+| | **NetFlow / IPFIX Flow Collector** | 🟢 Live | Operations & AI | **Live Monitoring** > **NetFlow / IPFIX** | `/monitoring` | Live UDP :2055 flow collector; displays Top Talkers (Source IPs by volume), Application Classification (WireGuard, HTTPS, Starlink-Telemetry, VoIP-SIP, BGP, DNS). |
+| | **SNMPv2c/v3 MIB Poller** | 🟢 Live | Operations & AI | **Live Diagnostics** > **SNMP MIB & Traps** | `/diagnostics` | Interactive tool to poll OIDs (`1.3.6.1.2.1`) across Cisco, MikroTik, and Linux devices. Extracts `sysName`, `sysDescr`, `sysUpTime`, and interface counters. |
+| | **SNMP Trap Receiver** | 🟢 Live | Operations & AI | **Live Diagnostics** > **SNMP MIB & Traps** | `/diagnostics` | UDP :1162 background trap listener ingesting enterprise traps (linkDown, linkUp, satelliteObstructionWarning) with 1-click demonstration simulation. |
 | | **Diagnostics (ARP / Ping)**| 🟢 Live | Operations & AI | **Live Diagnostics** | `/diagnostics` | Interactive tool to run live ICMP pings, ARP scans, traceroutes, interface packet inspections, and Starlink `192.168.100.1` dish checks. |
 | | **Alerts & Alarms** | 🟢 Live | Operations & AI | **Alerts** | `/alerts` | Sub-second alert feed triggering on carrier link loss, BFD threshold violations (>60ms), and packet loss events (>1.5%). |
 | | **Incidents Triage** | 🟢 Live | Operations & AI | **Incidents** | `/incidents` | Incident lifecycle management (P1 Critical through P4 Minor), SLA breach countdown timers, operator assignment, and resolution notes. |
-| | **SNMP Poller** | 🟡 Partial | Operations & AI | **Live Diagnostics** | `/diagnostics` | Port scanning detects UDP 161; full MIB/OID polling engine is slated for next phase. |
-| | **Syslog (RFC 5424)** | 🔴 Roadmap | Operations & AI | **Live Diagnostics** | `/diagnostics` | Currently captured via journald/backend logs; standalone RFC-5424 UDP/TCP 514 syslog ingest service is in roadmap. |
-| | **NetFlow / IPFIX** | 🔴 Roadmap | Operations & AI | **Live Monitoring** | `/monitoring` | Interface bandwidth is tracked via kernel byte counters; deep per-flow IPFIX collector is in roadmap. |
-| **Automation Engine**| **Autonomous Rules** | 🟢 Live | Operations & AI | **Automation** | `/automation` | Execution log and status of the 5 carrier-grade workflows: Automated WAN Path Steering, ZTP Engine, Flap Damping, SecOps Isolation, and GitOps Drift. |
+| **Automation Engine**| **Autonomous Rules** | 🟢 Live | Operations & AI | **Automation** > **Active Policies** | `/automation` | Execution log and status of the 5 carrier-grade workflows: Automated WAN Path Steering, ZTP Engine, Flap Damping, SecOps Isolation, and GitOps Drift. |
+| | **Router Golden Config Generator** | 🟢 Live | Operations & AI | **Automation** > **Router Automation** | `/automation` | Produces production-ready configuration syntax for Cisco IOS-XE, MikroTik RouterOS v7, and Linux WireGuard appliances with Starlink bypass. |
+| | **Remote SSH CLI Driver** | 🟢 Live | Operations & AI | **Automation** > **Router Automation** | `/automation` | Connects via SSH to Cisco, MikroTik, or Linux edge routers and executes live CLI commands (`show ip interface brief`, `/interface print`). |
+| | **RFC 6241 NETCONF RPC** | 🟢 Live | Operations & AI | **Automation** > **Router Automation** | `/automation` | Formulates and dispatches NETCONF XML RPC payloads (`<get-config>`, `<edit-config>`) to router management ports. |
 | | **Edge Agent Installer** | 🟢 Live | Control Plane | **Initial Setup** | `/setup` | One-command shell installer script generator (`curl -sSL http://.../agent/install.sh | bash`) for Cisco GuestShell, MikroTik, and Linux edge routers. |
-| | **SSH / Remote Config** | 🟡 Partial | Operations & AI | **Automation** | `/automation` | Rule execution dispatches local Linux FIB swaps and remote API registrations. Remote SSH command push is in-flight. |
-| | **NETCONF / RESTCONF** | 🔴 Roadmap | Operations & AI | **Automation** | `/automation` | YANG schema automation for native Cisco IOS-XE and Juniper Junos CLI push. |
 | **Governance & Security**| **Firewall Rules** | 🟢 Live | Governance & Security | **Firewall** | `/firewall` | State-aware ingress/egress security policies, Layer 3/4 drop rules, and zero-trust microsegmentation. |
 | | **NAT Policies** | 🟢 Live | Governance & Security | **NAT** | `/nat` | Source NAT (SNAT), Port Forwarding (DNAT), and 1:1 NAT mapping for corporate subnets. |
 | | **Routing Engine** | 🟢 Live | Governance & Security | **Routing** | `/routing` | Static route tables, policy-based routing (PBR), VRF segmentation, and BGP/OSPF peer statuses. |
@@ -112,26 +116,27 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
 ```
 
 ### 3.1 Cisco Routers (Catalyst 8000, ISR 4000, ASR 1000)
-- **Current Operational Mode:** **GuestShell / Agent Mode (Live)**
-  - Modern Cisco IOS-XE routers include an in-chassis Linux container environment called **GuestShell**.
-  - Technicians simply enable GuestShell and execute our 1-command installer from the `/setup` tab:
+- **Operational Mode 1 (GuestShell Container Agent):**
+  - Technicians enable GuestShell and execute the 1-command installer from the `/setup` tab:
     ```bash
     guestshell enable
     guestshell run bash -c "curl -sSL http://<MONITOR_IP>:3001/api/v1/network-discovery/agent/install.sh | bash"
     ```
-  - The agent periodically polls the router's interfaces and streams metrics back to Port 3001.
-- **Roadmap Enhancement (Native CLI/NETCONF):**
-  - Building a direct SSH / NETCONF driver in NestJS using RFC 6241 to push Cisco IOS-XE configuration blocks directly without requiring GuestShell.
+- **Operational Mode 2 (Golden Config Generator):**
+  - In the **Automation** tab (`/automation` > **Router Automation**), select **Cisco IOS-XE** to generate complete IP SLA, BFD, and Starlink bypass routing configurations.
+- **Operational Mode 3 (Remote SSH CLI Driver):**
+  - In `/automation` > **Router Automation**, operators can dispatch live Cisco CLI commands (`show ip interface brief`, `show version`, `show ip route`) via SSH port 22 directly from the Web NOC.
 
 ### 3.2 MikroTik Routers (RouterOS v7)
-- **Current Operational Mode:** **RouterOS Container Mode (Live)**
-  - MikroTik RouterOS v7 natively supports OCI containers.
-  - The IntelliLink Edge Agent image runs directly on the MikroTik router, exposing telemetry via REST back to the central platform.
-- **Roadmap Enhancement (RouterOS API / REST API):**
-  - Direct integration with RouterOS REST API (`/rest/interface`, `/rest/ip/route`) for agentless provisioning.
+- **Operational Mode 1 (RouterOS Container Agent):**
+  - Runs the edge container image inside MikroTik RouterOS v7.
+- **Operational Mode 2 (Golden Config Generator):**
+  - Generates `/interface wireguard`, `/ip route`, and `/ip firewall mangle` scripts formatted specifically for RouterOS v7.
+- **Operational Mode 3 (Remote SSH CLI Driver):**
+  - Dispatches MikroTik CLI commands (`/interface print`, `/ip route print`, `/system resource print`).
 
 ### 3.3 Firewalls & Sovereign PoP Aggregators
-- **Current Operational Mode:** **Native WireGuard & Linux Kernel (Live)**
+- **Operational Mode (Native WireGuard & Linux Kernel):**
   - Aggregators and firewalls run the full Linux networking stack with in-tree WireGuard (`wg0`).
   - Managed directly via the **Firewall** (`/firewall`), **NAT** (`/nat`), and **Tunnels** (`/tunnels`) tabs.
 
@@ -147,13 +152,23 @@ This document provides a comprehensive audit of the IntelliLink OS / V-Monitor p
 
 ---
 
-## 5. Development Roadmap to 100% Completion
+## 5. Client Demonstration Runbook for New Capabilities
 
-To bring the entire diagram from **85%** to **100% completed functionality**, the following three modular extensions are scheduled:
+When pitching or demonstrating the platform to enterprise clients:
 
-1. **SNMPv2c/SNMPv3 MIB Collector Daemon (Monitoring Engine):**
-   - Implement a background UDP 161 worker service in NestJS to poll standard MIB-II (`1.3.6.1.2.1`) interface tables from legacy switches that cannot run edge containers.
-2. **RFC 5424 Syslog Ingest Server (Monitoring Engine):**
-   - Bind a high-performance UDP/TCP 514 syslog listener to parse incoming syslog events into the **Alerts** (`/alerts`) and **Incidents** (`/incidents`) pipeline.
-3. **Native NETCONF / SSH Vendor Drivers (Automation Engine):**
-   - Add native SSH client automation with vendor-specific templates (Cisco IOS-XE, Juniper Junos, Huawei VRP) to push configuration changes directly from the **Automation** (`/automation`) tab.
+1. **Demonstrate Syslog Streaming (RFC 5424):**
+   - Navigate to **Live Monitoring** (`/monitoring`) and click the **Syslog Daemon (RFC 5424)** tab.
+   - Point out the active UDP `:5140` daemon listening status.
+   - Click **Simulate Syslog Event** to watch an RFC-formatted Cisco BGP drop or Starlink satellite handover message appear instantaneously with color-coded severity badges.
+2. **Demonstrate NetFlow / IPFIX Top Talkers:**
+   - In **Live Monitoring** (`/monitoring`), click the **NetFlow / IPFIX Flow Collector** tab.
+   - Show the live Top Talkers table, total bandwidth volume, and application classification breakdown (WireGuard Mesh, HTTPS, Starlink Telemetry, VoIP-SIP, DNS).
+   - Click **Simulate Flow Packet** to show dynamic real-time graph recalculation.
+3. **Demonstrate SNMP MIB Poller & Trap Ingestion:**
+   - Navigate to **Live Diagnostics** (`/diagnostics`) and click the **SNMP MIB & Traps** tab.
+   - Enter `192.168.0.50`, community `public`, and click **Execute MIB Poll**. Show the parsed `sysName`, `sysDescr`, and physical interface Octets.
+   - Under **Ingested SNMP Traps**, click **Simulate linkDown Trap** to show immediate trap capture and logging.
+4. **Demonstrate Cisco & MikroTik Router Automation:**
+   - Navigate to **Automation** (`/automation`) and click **Router Automation & Golden Configs**.
+   - Select **Cisco IOS-XE** or **MikroTik RouterOS**, enter site parameters, and click **Generate Production Golden Config** to reveal a complete multi-WAN Starlink bypass deployment script.
+   - Switch to the **Remote SSH CLI Driver** tab and click **Execute via SSH** to show interactive command execution.

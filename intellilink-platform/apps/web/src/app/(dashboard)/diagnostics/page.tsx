@@ -2,14 +2,15 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
-import { Terminal, Play, RefreshCw, CheckCircle2, XCircle, Clock, Server, Globe2, Activity } from 'lucide-react';
+import { SnmpDiagnostics } from '../../../components/diagnostics/SnmpDiagnostics';
+import { Terminal, Play, RefreshCw, CheckCircle2, XCircle, Clock, Server, Globe2, Activity, Radio } from 'lucide-react';
 
 export default function LiveDiagnosticsPage() {
   const [diagType, setDiagType] = useState('PING');
   const [targetHost, setTargetHost] = useState('8.8.8.8');
   const [targetPort, setTargetPort] = useState('443');
   const [pingCount, setPingCount] = useState('4');
-  const [activeTab, setActiveTab] = useState<'console' | 'history'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'history' | 'snmp'>('console');
   const [liveOutput, setLiveOutput] = useState<any>(null);
 
   // Fetch history from real MySQL database
@@ -84,11 +85,19 @@ export default function LiveDiagnosticsPage() {
             >
               Audit History ({history?.length || 0})
             </button>
+            <button
+              onClick={() => setActiveTab('snmp')}
+              className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                activeTab === 'snmp' ? 'bg-cyan-500 text-black font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-white'
+              }`}
+            >
+              SNMP MIB &amp; Traps
+            </button>
           </div>
         </div>
       </div>
 
-      {activeTab === 'console' ? (
+      {activeTab === 'console' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Controls Panel */}
           <div className="lg:col-span-5 space-y-4">
@@ -297,7 +306,9 @@ export default function LiveDiagnosticsPage() {
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'history' && (
         /* History View backed by MySQL */
         <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl overflow-hidden">
           <div className="p-4 border-b border-slate-200 dark:border-[#222E45] flex items-center justify-between">
@@ -351,6 +362,8 @@ export default function LiveDiagnosticsPage() {
           </table>
         </div>
       )}
+
+      {activeTab === 'snmp' && <SnmpDiagnostics />}
     </div>
   );
 }

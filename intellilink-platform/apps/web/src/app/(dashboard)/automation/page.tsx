@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { Pagination } from '../../../components/shared/Pagination';
+import { RouterAutomationTab } from '../../../components/automation/RouterAutomationTab';
 import {
   Zap, Play, ShieldAlert, CheckCircle2, Clock, Terminal,
   RefreshCw, Plus, ArrowRight, Activity, Cpu, Sliders,
@@ -12,7 +13,7 @@ import {
 
 export default function AutomationWorkflowsPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'playbooks' | 'runs' | 'terminal'>('playbooks');
+  const [activeTab, setActiveTab] = useState<'playbooks' | 'runs' | 'terminal' | 'router'>('playbooks');
   const [search, setSearch] = useState('');
   const [createModal, setCreateModal] = useState(false);
   const [executingRule, setExecutingRule] = useState<any>(null);
@@ -267,7 +268,22 @@ export default function AutomationWorkflowsPage() {
           <span>Live Execution Console</span>
           {liveExecutionLog && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />}
         </button>
+
+        <button
+          onClick={() => setActiveTab('router')}
+          className={`pb-3 transition-colors flex items-center gap-2 ${
+            activeTab === 'router'
+              ? 'text-cyan-400 border-b-2 border-cyan-400 font-semibold'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Cpu className="w-4 h-4" />
+          <span>Router Automation &amp; Golden Configs</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        </button>
       </div>
+
+      {activeTab === 'router' && <RouterAutomationTab />}
 
       {/* TAB 1: Playbooks & Policies */}
       {activeTab === 'playbooks' && (

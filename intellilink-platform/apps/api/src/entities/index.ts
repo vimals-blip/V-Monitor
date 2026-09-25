@@ -30,3 +30,6 @@ export * from './diagnostic-result.entity';
 export * from './ai-session.entity';
 export * from './ai-message.entity';
 export * from './system-health.entity';
+export * from './syslog.entity';
+export * from './snmp-trap.entity';
+export * from './netflow-record.entity';
