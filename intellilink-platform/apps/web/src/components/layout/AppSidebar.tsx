@@ -30,6 +30,7 @@ const navItems = [
     { label: 'Firewall', href: '/firewall', icon: Shield },
     { label: 'NAT', href: '/nat', icon: Shuffle },
     { label: 'Policies', href: '/policies', icon: FileText },
+    { label: 'AI Compliance', href: '/ai-compliance', icon: ShieldCheck },
   ]},
   { group: 'Operations & AI', items: [
     { label: 'Live Monitoring', href: '/monitoring', icon: Activity },

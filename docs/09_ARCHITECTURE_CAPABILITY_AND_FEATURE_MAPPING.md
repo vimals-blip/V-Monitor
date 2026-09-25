@@ -89,6 +89,7 @@ This document provides a comprehensive operational audit of the IntelliLink OS /
 | | **NAT Policies** | 🟢 Live | Governance & Security | **NAT** | `/nat` | Source NAT (SNAT), Port Forwarding (DNAT), and 1:1 NAT mapping for corporate subnets. |
 | | **Routing Engine** | 🟢 Live | Governance & Security | **Routing** | `/routing` | Static route tables, policy-based routing (PBR), VRF segmentation, and BGP/OSPF peer statuses. |
 | | **Enterprise Policies** | 🟢 Live | Governance & Security | **Policies** | `/policies` | Traffic shaping profiles, QoS priority tagging (VoIP DSCP EF 46 vs Bulk Traffic), and bandwidth limits. |
+| | **AI Compliance Hub** | 🟢 Live | Governance & Security | **AI Compliance** | `/ai-compliance` | Unified audit center integrating local engine (`:3005`) and cloud (`ai-compliance-web-five.vercel.app`) with SOC 2, ISO 27001, NIST CSF, PCI-DSS, and Sovereign Data Residency scorecards. |
 | | **Audit Trail** | 🟢 Live | System & Reports | **Audit Logs** | `/audit` | SOC-2 / ISO 27001 compliant immutable event stream tracking every operator action, route failover, rule edit, and login. |
 | | **SLA Engine** | 🟢 Live | System & Reports | **Reports** | `/reports` | Carrier SLA tracking (99.99% availability, latency thresholds, packet loss guarantees) and breach financial penalty calculators. |
 | | **Regulatory Reports** | 🟢 Live | System & Reports | **Reports** | `/reports` | Sovereign compliance reports detailing in-country PoP traffic anchoring and lawful interception readiness. |
@@ -172,3 +173,47 @@ When pitching or demonstrating the platform to enterprise clients:
    - Navigate to **Automation** (`/automation`) and click **Router Automation & Golden Configs**.
    - Select **Cisco IOS-XE** or **MikroTik RouterOS**, enter site parameters, and click **Generate Production Golden Config** to reveal a complete multi-WAN Starlink bypass deployment script.
    - Switch to the **Remote SSH CLI Driver** tab and click **Execute via SSH** to show interactive command execution.
+5. **Demonstrate AI Compliance & Governance Center:**
+   - Navigate to **Governance & Security** > **AI Compliance** (`/ai-compliance`).
+   - Highlight the **Dual-Engine Active** banner:
+     - Local Engine running at `http://localhost:3005`
+     - Global Edge CDN Production running at `https://ai-compliance-web-five.vercel.app`
+   - Review the verified audit scorecards for **SOC 2 Type II (96%)**, **ISO/IEC 27001:2022 (94%)**, **NIST CSF 2.0 (92%)**, **Sovereign Telecom (100%)**, and **PCI-DSS v4.0 (98%)**.
+   - Click **Show Embed** to interact with the full AI-Compliance workspace embedded directly inside the NOC, or click **Launch Dedicated App** to open in a separate window.
+
+---
+
+## 6. Dual-Engine Architecture: V-Monitor + AI-Compliance
+
+```
++-------------------------------------------------------------------------------------------------+
+|                                 V-Monitor NOC (Port 3000)                                       |
+|     24 Core Telemetry Tabs • Live BFD • WireGuard • Syslog • NetFlow • Golden Config Generator  |
++------------------------------------------------+------------------------------------------------+
+                                                 |
+                   +-----------------------------+-----------------------------+
+                   |                                                           |
++------------------v----------------------------+       +----------------------v------------------+
+|      Local Compliance Engine (Port 3005)      |       |      Cloud Edge CDN (Vercel)            |
+|       /home/cis/Desktop/AI-Comliance          |       |   https://ai-compliance-web-five...     |
+|      Full Next.js 15 Audit & Policy App       |       |   Public Client Verification Portal     |
++-----------------------------------------------+       +-----------------------------------------+
+                   |                                                           |
++------------------v-----------------------------------------------------------v------------------+
+|                                    Cross-Platform Evidence Bridge                               |
+|   • V-Monitor WireGuard Keys & Drop ACLs       ===> Ingested as SOC 2 CC6.6 & PCI Req 1.3 Evidence |
+|   • V-Monitor Sub-Second BFD Failover Telemetry ===> Ingested as SOC 2 A1.2 High Availability    |
+|   • V-Monitor Immutable MySQL 8 Audit Trail    ===> Ingested as ISO 27001 A.8.15 Audit Logs     |
+|   • V-Monitor In-Country PoP Breakout Anchoring ===> Ingested as Sovereign Data Residency Proof  |
++-------------------------------------------------------------------------------------------------+
+```
+
+### Port Mapping Matrix:
+| Service | Location | Port / URL | State |
+| :--- | :--- | :--- | :---: |
+| **V-Monitor Web NOC** | `/home/cis/Desktop/V-Monitor/intellilink-platform/apps/web` | `http://localhost:3000` | 🟢 Active |
+| **V-Monitor API** | `/home/cis/Desktop/V-Monitor/intellilink-platform/apps/api` | `http://localhost:3001` | 🟢 Active |
+| **V-Monitor AI Engine** | `/home/cis/Desktop/V-Monitor/services/ai-engine` | `http://localhost:8100` | 🟢 Active |
+| **AI-Compliance (Local)** | `/home/cis/Desktop/AI-Comliance/apps/web` | `http://localhost:3005` | 🟢 Active |
+| **AI-Compliance (Cloud)** | Vercel Edge Production | `https://ai-compliance-web-five.vercel.app` | 🟢 Active |
+
