@@ -84,8 +84,12 @@ export class WanLinksService {
     let targetDescription = '';
 
     if (mode === 'GATEWAY_CPE') {
-      target = options.targetHost || gateway?.hostname || link.name;
-      targetDescription = `Physical Edge Appliance: ${target}`;
+      const parsedIp = gateway?.hostname?.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.')
+        || gateway?.hostname?.match(/\d+\.\d+\.\d+\.\d+/)?.[0]
+        || link.name?.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.')
+        || link.name?.match(/\d+\.\d+\.\d+\.\d+/)?.[0];
+      target = options.targetHost || parsedIp || '192.168.0.50';
+      targetDescription = `Physical Edge Appliance: ${gateway?.hostname || link.name} (${target})`;
     } else if (mode === 'INTERNET_BACKBONE') {
       target = options.targetHost || '8.8.8.8';
       targetDescription = `Carrier Upstream Backbone / Transit DNS (${target})`;

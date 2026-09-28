@@ -391,7 +391,7 @@ export default function WANLinksPage() {
                   <RefreshCw className="w-8 h-8 text-cyan-600 dark:text-cyan-400 animate-spin" />
                   <p className="text-slate-200 font-semibold text-sm">Executing Live Linux Kernel ICMP Probe...</p>
                   <p className="text-slate-500 text-xs font-mono">
-                    Target: {testModal.targetMode === 'INTERNET_BACKBONE' ? '8.8.8.8 (Google Carrier Backbone)' : testModal.targetMode === 'LOCAL_LOOPBACK' ? '127.0.0.1' : testModal.link?.name}
+                    Target: {testModal.targetMode === 'INTERNET_BACKBONE' ? '8.8.8.8 (Carrier Backbone)' : testModal.targetMode === 'LOCAL_LOOPBACK' ? '127.0.0.1' : (testModal.link?.name?.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.') || testModal.link?.name)}
                   </p>
                 </div>
               ) : testModal.result?.connected ? (
