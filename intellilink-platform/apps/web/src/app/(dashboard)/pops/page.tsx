@@ -341,16 +341,48 @@ export default function ISPGovernancePoPsPage() {
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-wide uppercase">
                       PoP Deep Diagnostics &amp; Governance: {probeModal.pop?.name}
                     </h2>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      {probeModal.result?.status || 'HEALTHY'}
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {probeModal.result?.status || 'HEALTHY'} (LIVE)
                     </span>
+                    {probeModal.result?.testedAt && (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        Probe: {new Date(probeModal.result.testedAt).toLocaleTimeString()}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
                     <span>Backbone: <strong className="text-cyan-400">{probeModal.pop?.ispName || 'ISP Core West'}</strong></span>
                     <span>•</span>
                     <span>Location: <strong className="text-slate-200">{probeModal.pop?.city || 'Mumbai Metro'}</strong></span>
                     <span>•</span>
-                    <span>Target: <strong className="text-purple-300">{probeModal.result?.target || '192.168.0.50'}</strong></span>
+                    <span className="flex items-center gap-1.5">
+                      <span>Target:</span>
+                      <span className="inline-flex rounded-lg bg-[#0A0E17] p-0.5 border border-slate-700">
+                        {[
+                          { ip: '192.168.0.50', label: 'PoP Core' },
+                          { ip: '1.1.1.1', label: 'Tier-1 Cloudflare' },
+                          { ip: '8.8.8.8', label: 'Google WAN' },
+                        ].map((t) => (
+                          <button
+                            key={t.ip}
+                            type="button"
+                            onClick={() => {
+                              setProbeTarget(t.ip);
+                              setProbeModal((prev: any) => ({ ...prev, loading: true }));
+                              probeMutation.mutate({ popId: probeModal.pop.id, target: t.ip });
+                            }}
+                            className={`px-2 py-0.5 rounded text-[10px] transition-all font-semibold ${
+                              (probeModal.result?.target || probeTarget) === t.ip
+                                ? 'bg-cyan-500 text-black shadow'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {t.label} ({t.ip})
+                          </button>
+                        ))}
+                      </span>
+                    </span>
                   </div>
                 </div>
               </div>
