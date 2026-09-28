@@ -362,7 +362,7 @@ export default function AggregatorsPage() {
               <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">Active Cryptographic Peers</div>
                 <div className="text-base font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">
-                  {healthModal.result?.activePeers?.toLocaleString() || '3,100'} / {healthModal.result?.maxTunnels || 5000}
+                  {healthModal.result?.activePeers != null ? healthModal.result.activePeers.toLocaleString() : '—'} / {healthModal.result?.maxTunnels || 5000}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
                   Handshakes: 100% Validated
@@ -372,20 +372,20 @@ export default function AggregatorsPage() {
               <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">WireGuard Throughput</div>
                 <div className="text-base font-bold text-purple-400 mt-0.5">
-                  {healthModal.result?.rxThroughput || '14.2 Gbps'} RX / {healthModal.result?.txThroughput || '12.8 Gbps'} TX
+                  {healthModal.result?.rxThroughput ? `${healthModal.result.rxThroughput} RX / ${healthModal.result.txThroughput} TX` : '—'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5 truncate">
-                  Total Cumulative: {healthModal.result?.rxBytesFormatted || '107 GB'} RX
+                  Total Cumulative: {healthModal.result?.rxBytesFormatted || '—'} RX
                 </div>
               </div>
 
               <div className="p-3 bg-white dark:bg-[#121824] rounded-lg border border-slate-200 dark:border-[#222E45]">
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-sans">Host Core Utilization</div>
                 <div className="text-base font-bold text-amber-400 mt-0.5">
-                  {healthModal.result?.cpuLoad || '63%'} CPU • {healthModal.result?.memoryUsage || '78%'} RAM
+                  {healthModal.result?.cpuLoad ? `${healthModal.result.cpuLoad} CPU • ${healthModal.result.memoryUsage} RAM` : '—'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
-                  FIB Lookups: {healthModal.result?.fibLookupsPerSec || '3.4M/sec'}
+                  FIB Lookups: {healthModal.result?.fibLookupsPerSec || '—'}
                 </div>
               </div>
             </div>
@@ -393,7 +393,7 @@ export default function AggregatorsPage() {
             {/* Navigation Tabs */}
             <div className="flex border-b border-slate-200 dark:border-[#222E45] bg-[#0A0E17] px-5 text-xs font-medium">
               {[
-                { id: 'peers', label: 'Encrypted Branch Peers Matrix', icon: Layers, count: (healthModal.result?.peers || []).length || 4 },
+                { id: 'peers', label: 'Encrypted Branch Peers Matrix', icon: Layers, count: (healthModal.result?.peers || []).length },
                 { id: 'crypto', label: 'Kernel Crypto Engine & Hardware', icon: ShieldCheck },
                 { id: 'probe', label: 'Live Peer Latency Probe Terminal', icon: Terminal },
                 { id: 'actions', label: 'Apply Fixes & Remediations', icon: Wrench, highlight: true },
