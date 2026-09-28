@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
@@ -8,14 +8,151 @@ import { RouterAutomationTab } from '../../../components/automation/RouterAutoma
 import {
   Zap, Play, ShieldAlert, CheckCircle2, Clock, Terminal,
   RefreshCw, Plus, ArrowRight, Activity, Cpu, Sliders,
-  Check, X, AlertTriangle, Layers, FileCode, Server
+  Check, X, AlertTriangle, Layers, FileCode, Server,
+  Sparkles, Send, Trash2, Edit3, SlidersHorizontal, Bot
 } from 'lucide-react';
+
+const PRESETS = [
+  {
+    icon: '⚡',
+    label: 'BFD Latency Failover (>50ms)',
+    name: 'Dynamic Path Steering (BFD Latency >50ms)',
+    text: 'If BFD latency > 50ms, swap WAN priority to Secondary Fiber with 180s cooldown',
+  },
+  {
+    icon: '📉',
+    label: 'Packet Loss Steering (>2%)',
+    name: 'Dynamic Path Steering (Packet Loss >2%)',
+    text: 'If packet loss > 2%, swap WAN priority to Starlink LEO transport with 120s cooldown',
+  },
+  {
+    icon: '🛡️',
+    label: 'SecOps Threat Isolation',
+    name: 'Autonomous SecOps Zero-Trust Threat Isolation',
+    text: 'Isolate compromised VRF segment and push dynamic drop ACL when IDS anomaly detected with 600s cooldown',
+  },
+  {
+    icon: '🔄',
+    label: 'Route Flap Damping (>=3)',
+    name: 'Autonomous Route Flap Damping (3 Flaps Quarantine)',
+    text: 'When circuit flap count >= 3 in 60s, damp flapping route for 300s to protect core routing table',
+  },
+  {
+    icon: '📜',
+    label: 'Golden Config Reversion',
+    name: 'Autonomous Config Drift & Golden Template Enforcement',
+    text: 'Scans golden config drift and reverts unauthorized modifications with 180s cooldown',
+  },
+];
+
+function parseAutomationPrompt(text: string) {
+  const lower = text.toLowerCase();
+
+  let metric = 'bfd_latency_ms';
+  let threshold = 50;
+  let unit = 'ms';
+  let operator = 'GREATER_THAN';
+
+  if (lower.includes('loss') || lower.includes('drop') || lower.includes('%')) {
+    metric = 'packet_loss_pct';
+    unit = '%';
+    const match = text.match(/(\d+(?:\.\d+)?)\s*%/);
+    if (match) threshold = parseFloat(match[1]);
+    else {
+      const numMatch = text.match(/(?:>|>=|above|over|exceeds?)\s*(\d+(?:\.\d+)?)/i);
+      if (numMatch) threshold = parseFloat(numMatch[1]);
+      else threshold = 2;
+    }
+  } else if (lower.includes('flap') || lower.includes('oscillation')) {
+    metric = 'circuit_flap_count_60s';
+    unit = 'flaps';
+    const match = text.match(/(?:>|>=|over|exceeds?|reach(?:es)?)\s*(\d+)/i);
+    threshold = match ? parseInt(match[1], 10) : 3;
+  } else if (lower.includes('threat') || lower.includes('ddos') || lower.includes('ids') || lower.includes('attack') || lower.includes('anomaly')) {
+    metric = 'ids_threat_anomaly';
+    unit = 'event';
+    threshold = 1;
+  } else if (lower.includes('drift') || lower.includes('checksum') || lower.includes('golden') || lower.includes('template')) {
+    metric = 'golden_config_drift';
+    unit = 'drift';
+    threshold = 1;
+  } else {
+    metric = 'bfd_latency_ms';
+    unit = 'ms';
+    const match = text.match(/(?:>|>=|above|over|exceeds?)\s*(\d+)/i);
+    threshold = match ? parseInt(match[1], 10) : 50;
+  }
+
+  let actionType = 'SWAP_CIRCUIT_PRIORITY';
+  let actionLabel = 'Swap WAN Priority (Atomic Failover)';
+  let target = 'FABRIC_OVERLAY';
+
+  if (lower.includes('isolate') || lower.includes('quarantine') || lower.includes('blackhole') || lower.includes('threat')) {
+    actionType = 'ISOLATE_COMPROMISED_VRF';
+    actionLabel = 'Isolate Compromised VRF & Blackhole Traffic';
+    target = 'VRF_SEGMENT_50';
+  } else if (lower.includes('damp') || lower.includes('hold-down') || lower.includes('flap')) {
+    actionType = 'DAMP_FLAPPING_ROUTE';
+    actionLabel = 'Damp Route for 300s (Prevent Churn)';
+    target = 'CARRIER_TRANSIT';
+  } else if (lower.includes('golden') || lower.includes('revert') || lower.includes('gitops') || lower.includes('restore')) {
+    actionType = 'FORCE_RELOAD_GOLDEN_CONFIG';
+    actionLabel = 'Revert to Golden GitOps Config';
+    target = 'GITOPS_REPO';
+  } else {
+    actionType = 'SWAP_CIRCUIT_PRIORITY';
+    actionLabel = 'Swap WAN Priority (Atomic Failover)';
+    target = 'SECONDARY_TRANSPORT';
+  }
+
+  let cooldown = 180;
+  const cdMatch = text.match(/(?:cooldown|hold|wait)(?:\s*(?:of|is|:))?\s*(\d+)\s*(?:s|sec|seconds)?/i);
+  if (cdMatch) {
+    cooldown = parseInt(cdMatch[1], 10);
+  } else if (actionType === 'DAMP_FLAPPING_ROUTE') {
+    cooldown = 300;
+  } else if (actionType === 'ISOLATE_COMPROMISED_VRF') {
+    cooldown = 600;
+  }
+
+  let name = '';
+  if (metric === 'bfd_latency_ms') {
+    name = `Dynamic Path Steering (BFD Latency >${threshold}ms)`;
+  } else if (metric === 'packet_loss_pct') {
+    name = `Dynamic Path Steering (Packet Loss >${threshold}%)`;
+  } else if (metric === 'circuit_flap_count_60s') {
+    name = `Autonomous Route Flap Damping (${threshold} Flaps Quarantine)`;
+  } else if (metric === 'ids_threat_anomaly') {
+    name = `SecOps Dynamic Threat Isolation (Zero-Trust Quarantine)`;
+  } else if (metric === 'golden_config_drift') {
+    name = `Autonomous Config Drift & Golden Template Enforcement`;
+  } else {
+    name = `Autonomous SD-WAN Remediation Policy`;
+  }
+
+  return {
+    name,
+    description: text.trim() || `Automated policy triggered when ${metric} exceeds ${threshold}${unit}. Executes ${actionType}.`,
+    triggerMetric: metric,
+    threshold,
+    operator,
+    unit,
+    actionType,
+    actionLabel,
+    target,
+    cooldownSeconds: cooldown,
+  };
+}
 
 export default function AutomationWorkflowsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'playbooks' | 'runs' | 'terminal' | 'router'>('playbooks');
   const [search, setSearch] = useState('');
   const [createModal, setCreateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'prompt' | 'form'>('prompt');
+  const [directPrompt, setDirectPrompt] = useState('');
+  const [directCustomName, setDirectCustomName] = useState('');
+  const [modalPrompt, setModalPrompt] = useState('');
   const [executingRule, setExecutingRule] = useState<any>(null);
   const [liveExecutionLog, setLiveExecutionLog] = useState<any>(null);
   const [selectedRunTrace, setSelectedRunTrace] = useState<any>(null);
@@ -121,6 +258,39 @@ export default function AutomationWorkflowsPage() {
       alert('Error creating policy: ' + (err.response?.data?.message || err.message));
     }
   });
+
+  // Delete Rule Mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiClient.delete(`/automation/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['automation-rules'] });
+      notify('Automation policy removed from control plane.');
+    },
+    onError: (err: any) => {
+      alert('Error deleting policy: ' + (err.response?.data?.message || err.message));
+    }
+  });
+
+  const parsedDirect = useMemo(() => {
+    return parseAutomationPrompt(directPrompt);
+  }, [directPrompt]);
+
+  const handleDeployDirectPrompt = () => {
+    if (!directPrompt.trim()) return;
+    const parsed = parseAutomationPrompt(directPrompt);
+    createMutation.mutate({
+      name: directCustomName.trim() || parsed.name,
+      description: directPrompt.trim(),
+      status: 'ACTIVE',
+      cooldownSeconds: parsed.cooldownSeconds,
+      conditions: [{ metric: parsed.triggerMetric, operator: parsed.operator, threshold: parsed.threshold, unit: parsed.unit }],
+      actions: [{ type: parsed.actionType, target: parsed.target }],
+    });
+    setDirectPrompt('');
+    setDirectCustomName('');
+  };
 
   const handleRunNow = (rule: any) => {
     setExecutingRule(rule);
@@ -288,6 +458,124 @@ export default function AutomationWorkflowsPage() {
       {/* TAB 1: Playbooks & Policies */}
       {activeTab === 'playbooks' && (
         <div className="space-y-4">
+          {/* DIRECT TEXT BOX / PROMPT-BASED AUTOMATION CREATOR */}
+          <div className="bg-white dark:bg-[#121824] border border-cyan-500/40 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Direct Text &amp; Natural Language Policy Creator
+                    </h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30">
+                      Direct Prompt
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Type a self-healing policy in plain English or select a 1-click preset. Instantly parses triggers, thresholds, actions, and cooldowns directly into the MySQL database.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick Presets:</span>
+              {PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    setDirectPrompt(preset.text);
+                    setDirectCustomName(preset.name);
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-slate-50 dark:bg-[#162032] hover:bg-cyan-500/10 hover:border-cyan-500/40 border border-slate-200 dark:border-[#222E45] text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 text-xs transition-colors flex items-center gap-1.5"
+                >
+                  <span>{preset.icon}</span>
+                  <span>{preset.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Direct Text Box Input */}
+            <div className="space-y-2">
+              <div className="relative">
+                <textarea
+                  rows={2}
+                  value={directPrompt}
+                  onChange={(e) => setDirectPrompt(e.target.value)}
+                  placeholder="e.g. If Starlink packet loss > 2%, swap priority to Lumen Fiber and alert NOC with 180s cooldown..."
+                  className="w-full bg-slate-50 dark:bg-[#0B0F17] border border-slate-300 dark:border-[#222E45] focus:border-cyan-500 rounded-lg p-3 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none transition-colors font-mono resize-none shadow-inner"
+                />
+              </div>
+
+              {/* Optional custom name row */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder={`Policy Name: ${parsedDirect.name || 'Autonomous SD-WAN Remediation Policy'}`}
+                  value={directCustomName}
+                  onChange={(e) => setDirectCustomName(e.target.value)}
+                  className="flex-1 bg-slate-50 dark:bg-[#0B0F17] border border-slate-300 dark:border-[#222E45] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            {/* Parsed Live Inspector & Deploy Button */}
+            <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-cyan-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 font-mono tracking-wider uppercase">
+                  PARSED SPEC:
+                </span>
+                <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono text-[11px]">
+                  Metric: {parsedDirect.triggerMetric} ({parsedDirect.threshold}{parsedDirect.unit})
+                </span>
+                <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px]">
+                  Action: {parsedDirect.actionType}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-mono text-[11px]">
+                  Cooldown: {parsedDirect.cooldownSeconds}s
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {directPrompt.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDirectPrompt('');
+                      setDirectCustomName('');
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleDeployDirectPrompt}
+                  disabled={!directPrompt.trim() || createMutation.isPending}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs transition-colors shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {createMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deploying Policy...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3.5 h-3.5 fill-black" />
+                      <span>Create &amp; Activate Policy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4">
             {loadingRules ? (
               <div className="p-12 text-center text-slate-500 font-mono text-xs">
@@ -351,6 +639,19 @@ export default function AutomationWorkflowsPage() {
                               <span>Run Workflow Now</span>
                             </>
                           )}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete policy "${rule.name}"?`)) {
+                              deleteMutation.mutate(rule.id);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-[#222E45] bg-slate-50 dark:bg-[#162032] text-slate-400 hover:text-rose-400 hover:border-rose-500/40 transition-colors"
+                          title="Delete Automation Policy"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -620,108 +921,214 @@ export default function AutomationWorkflowsPage() {
                 <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">
                   <Plus className="w-5 h-5" />
                 </span>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Create Cisco-Grade Automation Policy</h2>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Create Cisco SD-WAN Automation Policy</h2>
               </div>
               <button onClick={() => setCreateModal(false)} className="text-slate-500 dark:text-slate-400 hover:text-white p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-5 space-y-4 text-xs">
-              <div>
-                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Policy Name *</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Starlink Low-Latency Path Steering"
-                  value={newRule.name}
-                  onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
-                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
-                />
-              </div>
+            {/* Mode Selector Tabs */}
+            <div className="flex border-b border-slate-200 dark:border-[#222E45] bg-slate-100/50 dark:bg-[#0E1420] px-5 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setModalMode('prompt')}
+                className={`pb-2.5 px-3 font-semibold transition-colors flex items-center gap-1.5 ${
+                  modalMode === 'prompt'
+                    ? 'text-cyan-500 border-b-2 border-cyan-500'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Direct Text Prompt</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalMode('form')}
+                className={`pb-2.5 px-3 font-semibold transition-colors flex items-center gap-1.5 ${
+                  modalMode === 'form'
+                    ? 'text-cyan-500 border-b-2 border-cyan-500'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Structured Form Builder</span>
+              </button>
+            </div>
 
-              <div>
-                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Operational Rationale & Description *</label>
-                <textarea
-                  required
-                  rows={2}
-                  placeholder="Specify criteria for automated failover, BFD probe evaluation, or ZTP enrollment..."
-                  value={newRule.description}
-                  onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
-                  className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            {modalMode === 'prompt' ? (
+              <div className="p-5 space-y-4 text-xs">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Trigger Metric *</label>
-                  <select
-                    value={newRule.triggerMetric}
-                    onChange={(e) => setNewRule({ ...newRule, triggerMetric: e.target.value })}
-                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
-                  >
-                    <option value="bfd_latency_ms">BFD RTT Latency (ms)</option>
-                    <option value="packet_loss_pct">Packet Loss (%)</option>
-                    <option value="circuit_flap_count_60s">Circuit Flap Count (60s)</option>
-                    <option value="ids_threat_anomaly">IDS Security Anomaly</option>
-                  </select>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">
+                    Describe Self-Healing Policy in Natural Language *
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. If BFD latency > 55ms on wg0, swap WAN priority to 5G cellular with 180s cooldown..."
+                    value={modalPrompt}
+                    onChange={(e) => setModalPrompt(e.target.value)}
+                    className="w-full bg-white dark:bg-[#121824] border border-slate-300 dark:border-[#222E45] rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono resize-none"
+                  />
                 </div>
 
+                {/* Quick Presets inside modal */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-400 block">Quick Templates:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESETS.map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => setModalPrompt(p.text)}
+                        className="px-2 py-1 rounded bg-slate-100 dark:bg-[#162032] hover:bg-cyan-500/10 hover:border-cyan-500/40 border border-slate-200 dark:border-[#222E45] text-[11px] text-slate-700 dark:text-slate-300 hover:text-cyan-400"
+                      >
+                        {p.icon} {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {modalPrompt.trim() && (() => {
+                  const parsed = parseAutomationPrompt(modalPrompt);
+                  return (
+                    <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-cyan-500/20 space-y-2">
+                      <span className="text-[10px] font-bold text-cyan-400 font-mono block">PARSED POLICY SPECIFICATION</span>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                        <div className="text-slate-400">Trigger: <span className="text-white">{parsed.triggerMetric}</span></div>
+                        <div className="text-slate-400">Threshold: <span className="text-purple-300">{parsed.operator === 'GREATER_THAN' ? '>' : parsed.operator} {parsed.threshold}{parsed.unit}</span></div>
+                        <div className="text-slate-400">Action: <span className="text-emerald-400">{parsed.actionType}</span></div>
+                        <div className="text-slate-400">Cooldown: <span className="text-cyan-300">{parsed.cooldownSeconds}s</span></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateModal(false)}
+                    className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A2333] hover:bg-slate-200 dark:hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!modalPrompt.trim() || createMutation.isPending}
+                    onClick={() => {
+                      const parsed = parseAutomationPrompt(modalPrompt);
+                      createMutation.mutate({
+                        name: parsed.name,
+                        description: modalPrompt.trim(),
+                        status: 'ACTIVE',
+                        cooldownSeconds: parsed.cooldownSeconds,
+                        conditions: [{ metric: parsed.triggerMetric, operator: parsed.operator, threshold: parsed.threshold, unit: parsed.unit }],
+                        actions: [{ type: parsed.actionType, target: parsed.target }],
+                      });
+                      setModalPrompt('');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {createMutation.isPending ? 'Committing...' : 'Commit & Activate'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateSubmit} className="p-5 space-y-4 text-xs">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Threshold Value *</label>
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Policy Name *</label>
                   <input
                     required
-                    type="number"
-                    value={newRule.threshold}
-                    onChange={(e) => setNewRule({ ...newRule, threshold: parseInt(e.target.value, 10) })}
+                    type="text"
+                    placeholder="e.g. Starlink Low-Latency Path Steering"
+                    value={newRule.name}
+                    onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
                     className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Automated Action *</label>
-                  <select
-                    value={newRule.actionType}
-                    onChange={(e) => setNewRule({ ...newRule, actionType: e.target.value })}
+                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Operational Rationale & Description *</label>
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="Specify criteria for automated failover, BFD probe evaluation, or ZTP enrollment..."
+                    value={newRule.description}
+                    onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
                     className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Trigger Metric *</label>
+                    <select
+                      value={newRule.triggerMetric}
+                      onChange={(e) => setNewRule({ ...newRule, triggerMetric: e.target.value })}
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="bfd_latency_ms">BFD RTT Latency (ms)</option>
+                      <option value="packet_loss_pct">Packet Loss (%)</option>
+                      <option value="circuit_flap_count_60s">Circuit Flap Count (60s)</option>
+                      <option value="ids_threat_anomaly">IDS Security Anomaly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Threshold Value *</label>
+                    <input
+                      required
+                      type="number"
+                      value={newRule.threshold}
+                      onChange={(e) => setNewRule({ ...newRule, threshold: parseInt(e.target.value, 10) })}
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Automated Action *</label>
+                    <select
+                      value={newRule.actionType}
+                      onChange={(e) => setNewRule({ ...newRule, actionType: e.target.value })}
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="SWAP_CIRCUIT_PRIORITY">Swap WAN Priority (Atomic Failover)</option>
+                      <option value="ISOLATE_COMPROMISED_VRF">Isolate & Blackhole VRF</option>
+                      <option value="DAMP_FLAPPING_ROUTE">Damp Route for 300s</option>
+                      <option value="FORCE_RELOAD_GOLDEN_CONFIG">Revert to Golden GitOps Config</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Cooldown Timer (seconds)</label>
+                    <input
+                      type="number"
+                      value={newRule.cooldownSeconds}
+                      onChange={(e) => setNewRule({ ...newRule, cooldownSeconds: parseInt(e.target.value, 10) })}
+                      className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateModal(false)}
+                    className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A2333] hover:bg-slate-200 dark:hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
                   >
-                    <option value="SWAP_CIRCUIT_PRIORITY">Swap WAN Priority (Atomic Failover)</option>
-                    <option value="ISOLATE_COMPROMISED_VRF">Isolate & Blackhole VRF</option>
-                    <option value="DAMP_FLAPPING_ROUTE">Damp Route for 300s</option>
-                    <option value="FORCE_RELOAD_GOLDEN_CONFIG">Revert to Golden GitOps Config</option>
-                  </select>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createMutation.isPending}
+                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-lg shadow-cyan-500/20"
+                  >
+                    {createMutation.isPending ? 'Committing...' : 'Commit Policy'}
+                  </button>
                 </div>
-
-                <div>
-                  <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">Cooldown Timer (seconds)</label>
-                  <input
-                    type="number"
-                    value={newRule.cooldownSeconds}
-                    onChange={(e) => setNewRule({ ...newRule, cooldownSeconds: parseInt(e.target.value, 10) })}
-                    className="w-full bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateModal(false)}
-                  className="px-4 py-2 rounded-lg bg-[#1A2333] hover:bg-[#222E45] text-slate-900 dark:text-white font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-lg shadow-cyan-500/20"
-                >
-                  {createMutation.isPending ? 'Committing...' : 'Commit Policy'}
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
       )}
