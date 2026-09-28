@@ -138,6 +138,9 @@ export default function AggregatorsPage() {
       setActionLog(data.executionLog || 'Operation completed.');
       notify(`✅ Operation "${data.action}" processed successfully.`);
       queryClient.invalidateQueries({ queryKey: ['aggregators-list'] });
+      if (healthModal?.agg?.id) {
+        probeMutation.mutate({ aggId: healthModal.agg.id, target: probeTarget });
+      }
     },
     onError: (err: any) => {
       setExecutingAction(null);
@@ -538,19 +541,19 @@ export default function AggregatorsPage() {
                           <div className="space-y-2 text-[11px]">
                             <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Cumulative Kernel RX:</span>
-                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.rxBytesFormatted || '107 GB'}</span>
+                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.rxBytesFormatted || '—'}</span>
                             </div>
                             <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Cumulative Kernel TX:</span>
-                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.txBytesFormatted || '7.17 GB'}</span>
+                              <span className="text-slate-900 dark:text-white font-bold">{healthModal.result?.txBytesFormatted || '—'}</span>
                             </div>
                             <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Interface Dropped Packets:</span>
-                              <span className="text-amber-400 font-bold">{healthModal.result?.rxDrops?.toLocaleString() || 0}</span>
+                              <span className="text-amber-400 font-bold">{healthModal.result?.rxDrops?.toLocaleString() ?? 0}</span>
                             </div>
                             <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#1E293B]">
                               <span className="text-slate-400">Hardware Packet Errors:</span>
-                              <span className="text-emerald-400 font-bold">{healthModal.result?.rxErrors || 0}</span>
+                              <span className="text-emerald-400 font-bold">{healthModal.result?.rxErrors ?? 0}</span>
                             </div>
                           </div>
                         </div>
@@ -699,7 +702,7 @@ export default function AggregatorsPage() {
                           </button>
                         </div>
 
-                        {/* Action 4: Flush Stale Peer ARP */}
+                        {/* Action 4: Dispatch BFD Keepalive Burst */}
                         <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex flex-col justify-between space-y-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -707,15 +710,19 @@ export default function AggregatorsPage() {
                               <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">Dispatch BFD Keepalive Burst</span>
                             </div>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
-                              Broadcasts synthetic BFD echo probes to all 4 edge branch endpoints to wake up dormant tunnels and clear stale neighbor caches.
+                              Broadcasts synthetic BFD echo probes to all active edge branch endpoints to wake up dormant tunnels and clear stale neighbor caches.
                             </p>
                           </div>
                           <button
-                            onClick={() => aggActionMutation.mutate({ aggId: healthModal.agg.id, action: 'ping-peers', params: { target: '192.168.0.50' } })}
-                            disabled={executingAction === 'ping-peers'}
+                            onClick={() => aggActionMutation.mutate({ aggId: healthModal.agg.id, action: 'bfd-burst' })}
+                            disabled={executingAction === 'bfd-burst'}
                             className="w-full py-2 px-3 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-xs font-mono font-bold transition-all flex items-center justify-center gap-2"
                           >
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            {executingAction === 'bfd-burst' ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            )}
                             <span>Transmit BFD Burst</span>
                           </button>
                         </div>
