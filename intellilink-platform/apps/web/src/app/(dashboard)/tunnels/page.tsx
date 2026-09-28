@@ -346,8 +346,8 @@ export default function EncryptedTunnelsPage() {
                       {handshakeModal.result?.status || 'ONLINE'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                    Peer: {handshakeModal.tunnel?.remoteEndpoint || handshakeModal.result?.activeEndpoint} • Device: wg0
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 truncate max-w-xl">
+                    {handshakeModal.result?.gatewayHostname || 'Edge Gateway'} ({handshakeModal.tunnel?.localEndpoint}) ◀──[Noise_IKpsk2]──▶ {handshakeModal.result?.aggregatorHostname || 'Core PoP'} ({handshakeModal.tunnel?.remoteEndpoint})
                   </p>
                 </div>
               </div>
@@ -398,16 +398,24 @@ export default function EncryptedTunnelsPage() {
                   {/* Peer Verification Details */}
                   <div className="bg-white dark:bg-[#0F172A] p-4 rounded-xl border border-slate-200 dark:border-[#1E293B] space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
                     <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
-                      <span className="text-slate-500">Peer Endpoint:</span>
-                      <span className="text-slate-900 dark:text-white font-semibold">{handshakeModal.result?.activeEndpoint}</span>
+                      <span className="text-slate-500">Edge Gateway &amp; Site:</span>
+                      <span className="text-slate-900 dark:text-white font-semibold">{handshakeModal.result?.gatewayHostname} • {handshakeModal.result?.siteName}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
+                      <span className="text-slate-500">Public Key (Fingerprint):</span>
+                      <span className="text-cyan-400 font-mono">{handshakeModal.result?.peerPublicKey}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
+                      <span className="text-slate-500">Encrypted Transit Subnet:</span>
+                      <span className="text-slate-200 font-mono">{handshakeModal.result?.localSubnet} ➔ {handshakeModal.result?.remoteSubnet}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
+                      <span className="text-slate-500">BFD Sub-Second State:</span>
+                      <span className="text-emerald-400 font-semibold">{handshakeModal.result?.bfdStatus || 'NOMINAL'} ({handshakeModal.result?.bfdIntervalMs || 38}ms heartbeat)</span>
                     </div>
                     <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
                       <span className="text-slate-500">Persistent Keepalive:</span>
                       <span className="text-emerald-400 font-semibold">{handshakeModal.result?.keepaliveInterval}</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-[#1E293B]">
-                      <span className="text-slate-500">FSM State:</span>
-                      <span className="text-emerald-400 font-semibold">{handshakeModal.result?.tunnelState}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Interface MTU Ceiling:</span>
@@ -419,7 +427,7 @@ export default function EncryptedTunnelsPage() {
                   {handshakeModal.result?.rawOutput && (
                     <div className="space-y-1.5">
                       <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider block">
-                        Kernel Socket Keepalive Probe Log:
+                        Kernel Socket Keepalive Probe Log ({handshakeModal.result?.pingTarget}):
                       </span>
                       <pre className="p-3 bg-[#05080E] rounded-xl border border-slate-200 dark:border-[#1E293B] text-emerald-400 text-[11px] overflow-x-auto leading-relaxed">
                         {handshakeModal.result.rawOutput}
@@ -435,12 +443,22 @@ export default function EncryptedTunnelsPage() {
               <span className="text-[11px] text-slate-500 font-mono">
                 Verified: {handshakeModal.result?.testedAt ? new Date(handshakeModal.result.testedAt).toLocaleTimeString() : 'Just now'}
               </span>
-              <button
-                onClick={() => setHandshakeModal(null)}
-                className="px-4 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-slate-900 dark:text-white text-xs font-medium transition-colors"
-              >
-                Close Inspector
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => verifyMutation.mutate(handshakeModal.tunnel.id)}
+                  disabled={verifyMutation.isPending}
+                  className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#2A374A] text-cyan-400 text-xs font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${verifyMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>Re-Verify Handshake</span>
+                </button>
+                <button
+                  onClick={() => setHandshakeModal(null)}
+                  className="px-4 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-slate-900 dark:text-white text-xs font-medium transition-colors"
+                >
+                  Close Inspector
+                </button>
+              </div>
             </div>
           </div>
         </div>
