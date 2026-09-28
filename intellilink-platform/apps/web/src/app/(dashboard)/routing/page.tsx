@@ -92,24 +92,44 @@ export default function RoutingPage() {
 
   const traceMutation = useMutation({
     mutationFn: async (route: any) => {
-      const targetHost = route.nextHop && route.nextHop !== '0.0.0.0' ? route.nextHop : route.prefix?.split('/')[0] || '8.8.8.8';
+      let destinationProbeIp = '8.8.8.8';
+      if (route.prefix === '0.0.0.0/0') {
+        destinationProbeIp = '8.8.8.8';
+      } else if (route.prefix?.includes('/')) {
+        const parts = route.prefix.split('/')[0].split('.');
+        if (parts.length === 4) {
+          parts[3] = parts[3] === '0' ? '1' : parts[3];
+          destinationProbeIp = parts.join('.');
+        }
+      } else if (route.prefix) {
+        destinationProbeIp = route.prefix;
+      }
+
       const res = await apiClient.post('/diagnostics/run', {
         type: 'ROUTE_INSPECTION',
-        host: targetHost,
+        host: destinationProbeIp,
         targetId: route.id,
         targetType: 'ROUTE',
       });
-      return res.data;
+      return { ...res.data, probedDestination: destinationProbeIp };
     },
     onSuccess: (data, route) => {
+      const output = data.result?.routeOutput || data.result?.error || '';
+      const devMatch = output.match(/dev\s+(\S+)/);
+      const srcMatch = output.match(/src\s+([\d.]+)/);
+      const viaMatch = output.match(/via\s+([\d.]+)/);
+
       setTraceModal((prev: any) => prev ? {
         ...prev,
         loading: false,
         result: {
           pathStatus: data.status === 'SUCCESS' ? 'FIB_RESOLVED' : 'UNREACHABLE',
-          routeOutput: data.result?.routeOutput || data.result?.error || 'Route lookup completed.',
+          routeOutput: output || 'Route lookup completed.',
           fibConvergence: 'SYNCED_WITH_KERNEL_FIB',
-          target: data.result?.target || route.prefix,
+          target: data.probedDestination || data.result?.target || route.prefix,
+          egressDev: devMatch ? devMatch[1] : (route.interfaceName || 'eno1'),
+          hostOrigin: srcMatch ? srcMatch[1] : '192.168.2.212',
+          nextHopResolved: viaMatch ? viaMatch[1] : (route.nextHop || '192.168.0.50'),
         }
       } : null);
     },
@@ -366,15 +386,15 @@ export default function RoutingPage() {
                     <div className="flex items-center justify-between bg-slate-50 dark:bg-[#090D16] p-3 rounded-lg border border-slate-200 dark:border-[#1E293B] text-[11px]">
                       <div className="text-center">
                         <span className="text-slate-500 text-[10px] block">HOST ORIGIN</span>
-                        <span className="text-slate-900 dark:text-white font-bold">192.168.2.212</span>
+                        <span className="text-slate-900 dark:text-white font-bold">{traceModal.result?.hostOrigin || '192.168.2.212'}</span>
                       </div>
                       <div className="flex flex-col items-center px-2">
-                        <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono">{traceModal.route?.interfaceName || 'eno1'}</span>
+                        <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono">{traceModal.route?.interfaceName || 'wg0'} ({traceModal.result?.egressDev || 'eno1'})</span>
                         <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="text-center">
                         <span className="text-slate-500 text-[10px] block">NEXT-HOP GATEWAY</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{traceModal.route?.nextHop || '192.168.0.50'}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{traceModal.result?.nextHopResolved || traceModal.route?.nextHop || '192.168.0.50'}</span>
                       </div>
                       <div className="flex flex-col items-center px-2">
                         <span className="text-[9px] text-slate-500 font-mono">FIB</span>
@@ -383,6 +403,7 @@ export default function RoutingPage() {
                       <div className="text-center">
                         <span className="text-slate-500 text-[10px] block">DESTINATION SUBNET</span>
                         <span className="text-blue-300 font-bold">{traceModal.route?.prefix}</span>
+                        <span className="text-[10px] text-slate-500 block font-mono">Target: {traceModal.result?.target}</span>
                       </div>
                     </div>
                   </div>
@@ -394,8 +415,10 @@ export default function RoutingPage() {
                       <span className="text-slate-900 dark:text-white font-bold mt-0.5 block">#{traceModal.route?.metric || 20}</span>
                     </div>
                     <div className="bg-white dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-[#1E293B]">
-                      <span className="text-slate-500 block text-[10px]">INTERFACE</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-bold mt-0.5 block">{traceModal.route?.interfaceName || 'eno1'}</span>
+                      <span className="text-slate-500 block text-[10px]">OVERLAY / EGRESS</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold mt-0.5 block">
+                        {traceModal.route?.interfaceName || 'wg0'} <span className="text-slate-500 text-[10px] font-normal">({traceModal.result?.egressDev || 'eno1'})</span>
+                      </span>
                     </div>
                     <div className="bg-white dark:bg-[#0F172A] p-3 rounded-xl border border-slate-200 dark:border-[#1E293B]">
                       <span className="text-slate-500 block text-[10px]">PROTOCOL</span>
