@@ -20,4 +20,15 @@ export class DiagnosticsController {
   getHistory(@CurrentUser() user: any) {
     return this.service.getHistory(user);
   }
+
+  @Get('terminal/targets')
+  getTerminalTargets(@CurrentUser() user: any) {
+    return this.service.getTerminalTargets(user);
+  }
+
+  @Post('terminal/execute')
+  executeTerminalCommand(@Body() body: any, @CurrentUser() user: any) {
+    return this.service.executeTerminalCommand(body, user);
+  }
 }
+

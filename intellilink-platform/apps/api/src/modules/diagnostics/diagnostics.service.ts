@@ -1,15 +1,18 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { execFile } from 'child_process';
+import { execFile, exec } from 'child_process';
+import { Client as SshClient } from 'ssh2';
 import * as dns from 'dns/promises';
 import * as net from 'net';
 import * as os from 'os';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import { DiagnosticResultEntity } from '../../entities/diagnostic-result.entity';
+import { GatewayEntity } from '../../entities/gateway.entity';
 
 const execFileAsync = promisify(execFile);
+const execPromise = promisify(exec);
 
 @Injectable()
 export class DiagnosticsService {
@@ -25,6 +28,7 @@ export class DiagnosticsService {
     'GATEWAY_HEARTBEAT',
     'WAN_REACHABILITY',
     'POP_REACHABILITY',
+    'TERMINAL_COMMAND',
   ];
 
   constructor(
@@ -311,4 +315,272 @@ export class DiagnosticsService {
       };
     }
   }
+
+  async getTerminalTargets(user: any) {
+    const targets: any[] = [];
+
+    // 1. Local Host Controller Node
+    const interfaces = os.networkInterfaces();
+    let localLanIp = '127.0.0.1';
+    for (const [name, addrs] of Object.entries(interfaces)) {
+      if (!addrs) continue;
+      for (const addr of addrs) {
+        if (!addr.internal && addr.family === 'IPv4') {
+          localLanIp = addr.address;
+          break;
+        }
+      }
+    }
+
+    targets.push({
+      id: 'localhost',
+      name: `Local Host Controller (${os.hostname()})`,
+      host: '127.0.0.1',
+      lanIp: localLanIp,
+      type: 'LOCAL',
+      status: 'ONLINE',
+      os: `${os.type()} ${os.release()} (${os.arch()})`,
+      description: 'Direct Linux host execution with kernel, bash & service control',
+    });
+
+    // 2. Enrolled Gateways from Database
+    try {
+      const gateways = await this.repo.manager.find(GatewayEntity, {
+        take: 20,
+        order: { createdAt: 'DESC' },
+      });
+      for (const gw of gateways) {
+        const gwIp = (gw as any).ipAddress || gw.hostname?.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.') || '192.168.0.50';
+        targets.push({
+          id: gw.id,
+          name: `${gw.hostname || 'Gateway'} (${gwIp})`,
+          host: gwIp,
+          type: 'REMOTE',
+          status: gw.status || 'ONLINE',
+          os: `${gw.model || 'Edge Router / Gateway'} (v${gw.firmwareVersion || '1.0'})`,
+          description: `Enrolled Edge Device - Site ${gw.siteId || 'Default'}`,
+        });
+      }
+    } catch (e: any) {
+      this.logger.debug(`Could not query gateways for terminal targets: ${e.message}`);
+    }
+
+    // 3. Discovered Network Devices from ARP / Neighbor Table
+    try {
+      const { stdout } = await execFileAsync('/usr/sbin/ip', ['neigh', 'show']);
+      const lines = stdout.split('\n');
+      const seenIps = new Set<string>(targets.map((t) => t.host));
+      seenIps.add('127.0.0.1');
+      if (localLanIp) seenIps.add(localLanIp);
+
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 4) {
+          const ip = parts[0];
+          const state = parts[parts.length - 1];
+          if ((state === 'REACHABLE' || state === 'DELAY' || state === 'STALE') && !seenIps.has(ip)) {
+            seenIps.add(ip);
+            let mac = '';
+            const lladdrIdx = parts.indexOf('lladdr');
+            if (lladdrIdx !== -1 && parts[lladdrIdx + 1]) {
+              mac = parts[lladdrIdx + 1];
+            }
+            targets.push({
+              id: `discovered-${ip}`,
+              name: `Discovered Node (${ip}${mac ? ' - ' + mac : ''})`,
+              host: ip,
+              type: 'REMOTE',
+              status: state === 'REACHABLE' ? 'ONLINE' : 'ACTIVE',
+              os: 'Remote Network Node / VM',
+              description: `LAN Node on interface ${parts[2] || 'eno1'} [${state}]`,
+            });
+            if (targets.length >= 25) break;
+          }
+        }
+      }
+    } catch (e: any) {
+      this.logger.debug(`ARP neighbor discovery for terminal targets note: ${e.message}`);
+    }
+
+    return targets;
+  }
+
+  async executeTerminalCommand(
+    dto: {
+      targetType?: 'LOCAL' | 'REMOTE';
+      host?: string;
+      port?: number;
+      username?: string;
+      password?: string;
+      privateKey?: string;
+      command: string;
+      timeoutMs?: number;
+    },
+    user: any,
+  ) {
+    if (!dto.command || typeof dto.command !== 'string' || !dto.command.trim()) {
+      throw new BadRequestException('Shell command cannot be empty.');
+    }
+
+    const command = dto.command.trim();
+
+    // Security check: block dangerous catastrophic commands
+    const dangerousPatterns = [
+      /\brm\s+-[rf]{1,2}\s+(\/|\*)/i,
+      />\s*\/dev\/sd[a-z]/i,
+      /\bmkfs/i,
+      /:()\s*{\s*:\s*\|\s*:\s*&\s*}\s*;/i,
+      /\bdd\s+if=/i,
+    ];
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(command)) {
+        throw new BadRequestException('Command blocked by security policy: destructive or unsafe system operations are disallowed.');
+      }
+    }
+
+    const start = Date.now();
+    const host = (dto.host || '127.0.0.1').trim();
+    const isLocal = dto.targetType === 'LOCAL' || host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
+
+    let stdout = '';
+    let stderr = '';
+    let code = 0;
+
+    if (isLocal) {
+      try {
+        const res = await execPromise(command, {
+          timeout: Math.min(dto.timeoutMs || 15000, 30000),
+          maxBuffer: 2 * 1024 * 1024,
+          shell: '/bin/bash',
+        });
+        stdout = res.stdout ? res.stdout.toString() : '';
+        stderr = res.stderr ? res.stderr.toString() : '';
+      } catch (err: any) {
+        code = typeof err.code === 'number' ? err.code : 1;
+        stdout = err.stdout ? err.stdout.toString() : '';
+        stderr = err.stderr ? err.stderr.toString() : (err.message || 'Execution error');
+      }
+    } else {
+      // Remote Execution via SSH
+      const port = dto.port || 22;
+      const username = dto.username || 'root';
+
+      const sshResult = await new Promise<{ stdout: string; stderr: string; code: number }>((resolve) => {
+        const conn = new SshClient();
+        let remoteStdout = '';
+        let remoteStderr = '';
+        let settled = false;
+
+        const timeout = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            conn.end();
+            resolve({
+              stdout: '',
+              stderr: `SSH Connection to ${host}:${port} timed out after 10000ms. Check if remote VM/host has SSH enabled and port ${port} is reachable.`,
+              code: 124,
+            });
+          }
+        }, 10000);
+
+        conn
+          .on('ready', () => {
+            conn.exec(command, (err, stream) => {
+              if (err) {
+                clearTimeout(timeout);
+                if (!settled) {
+                  settled = true;
+                  conn.end();
+                  resolve({ stdout: '', stderr: `SSH Execution error: ${err.message}`, code: 1 });
+                }
+                return;
+              }
+
+              stream
+                .on('close', (exitCode: number) => {
+                  clearTimeout(timeout);
+                  if (!settled) {
+                    settled = true;
+                    conn.end();
+                    resolve({
+                      stdout: remoteStdout,
+                      stderr: remoteStderr,
+                      code: exitCode ?? 0,
+                    });
+                  }
+                })
+                .on('data', (chunk: Buffer) => {
+                  remoteStdout += chunk.toString();
+                })
+                .stderr.on('data', (chunk: Buffer) => {
+                  remoteStderr += chunk.toString();
+                });
+            });
+          })
+          .on('error', (err) => {
+            clearTimeout(timeout);
+            if (!settled) {
+              settled = true;
+              resolve({
+                stdout: '',
+                stderr: `SSH Error (${host}:${port}): ${err.message}. Provide valid SSH credentials (user/password or private key) to run commands on this remote node.`,
+                code: 1,
+              });
+            }
+          })
+          .connect({
+            host,
+            port,
+            username,
+            password: dto.password,
+            privateKey: dto.privateKey,
+            readyTimeout: 8000,
+          });
+      });
+
+      stdout = sshResult.stdout;
+      stderr = sshResult.stderr;
+      code = sshResult.code;
+    }
+
+    const durationMs = Date.now() - start;
+
+    // Record audit trail in database
+    try {
+      const record = this.repo.create({
+        id: uuidv4(),
+        organizationId: user?.organizationId || '00000000-0000-0000-0000-000000000001',
+        tenantId: user?.tenantId || null,
+        type: 'TERMINAL_COMMAND',
+        targetId: host,
+        targetType: isLocal ? 'LOCAL_HOST' : 'REMOTE_VM',
+        status: code === 0 ? 'SUCCESS' : 'FAILURE',
+        result: {
+          command,
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          code,
+          durationMs,
+          host,
+          targetType: isLocal ? 'LOCAL' : 'REMOTE',
+        },
+        executedBy: user?.id || '00000000-0000-0000-0000-000000000001',
+        durationMs,
+      });
+      await this.repo.save(record);
+    } catch (dbErr: any) {
+      this.logger.warn(`Failed to persist terminal audit record: ${dbErr.message}`);
+    }
+
+    return {
+      stdout: stdout.trim(),
+      stderr: stderr.trim(),
+      code,
+      durationMs,
+      target: host,
+      command,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
+

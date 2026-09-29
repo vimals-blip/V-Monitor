@@ -3,14 +3,15 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api';
 import { SnmpDiagnostics } from '../../../components/diagnostics/SnmpDiagnostics';
-import { Terminal, Play, RefreshCw, CheckCircle2, XCircle, Clock, Server, Globe2, Activity, Radio } from 'lucide-react';
+import { WebTerminalConsole } from '../../../components/diagnostics/WebTerminalConsole';
+import { Terminal, Play, RefreshCw, CheckCircle2, XCircle, Clock, Server, Globe2, Activity, Radio, Cpu } from 'lucide-react';
 
 export default function LiveDiagnosticsPage() {
   const [diagType, setDiagType] = useState('PING');
   const [targetHost, setTargetHost] = useState('8.8.8.8');
   const [targetPort, setTargetPort] = useState('443');
   const [pingCount, setPingCount] = useState('4');
-  const [activeTab, setActiveTab] = useState<'console' | 'history' | 'snmp'>('console');
+  const [activeTab, setActiveTab] = useState<'terminal' | 'console' | 'history' | 'snmp'>('terminal');
   const [liveOutput, setLiveOutput] = useState<any>(null);
 
   // Fetch history from real MySQL database
@@ -70,12 +71,21 @@ export default function LiveDiagnosticsPage() {
         <div className="flex items-center gap-3">
           <div className="flex bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-[#222E45] rounded-lg p-0.5 text-xs">
             <button
+              onClick={() => setActiveTab('terminal')}
+              className={`px-3 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                activeTab === 'terminal' ? 'bg-cyan-500 text-black font-bold shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-white'
+              }`}
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              <span>Web Terminal &amp; VM Shell</span>
+            </button>
+            <button
               onClick={() => setActiveTab('console')}
               className={`px-3 py-1.5 rounded-md font-medium transition-all ${
                 activeTab === 'console' ? 'bg-cyan-500 text-black font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-white'
               }`}
             >
-              Interactive Console
+              ICMP &amp; Socket Probes
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -96,6 +106,8 @@ export default function LiveDiagnosticsPage() {
           </div>
         </div>
       </div>
+
+      {activeTab === 'terminal' && <WebTerminalConsole />}
 
       {activeTab === 'console' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
