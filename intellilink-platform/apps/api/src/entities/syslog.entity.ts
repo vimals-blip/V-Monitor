@@ -32,6 +32,6 @@ export class SyslogEntity {
   sourceIp: string;
 
   @Index()
-  @CreateDateColumn({ type: 'datetime', precision: 6 })
+  @CreateDateColumn()
   createdAt: Date;
 }

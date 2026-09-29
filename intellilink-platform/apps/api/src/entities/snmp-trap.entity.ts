@@ -29,6 +29,6 @@ export class SnmpTrapEntity {
   enterpriseOid: string;
 
   @Index()
-  @CreateDateColumn({ type: 'datetime', precision: 6 })
+  @CreateDateColumn()
   createdAt: Date;
 }

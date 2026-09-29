@@ -55,17 +55,32 @@ import { ComplianceBridgeModule } from './modules/compliance-bridge/compliance-b
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (cfg: ConfigService) => ({
-        type: (cfg.get<string>('database.type') || 'mysql') as any,
-        host: cfg.get<string>('database.host'),
-        port: cfg.get<number>('database.port'),
-        username: cfg.get<string>('database.user'),
-        password: cfg.get<string>('database.password'),
-        database: cfg.get<string>('database.name'),
-        entities: Object.values(Entities),
-        synchronize: true,
-        logging: false,
-      }),
+      useFactory: (cfg: ConfigService) => {
+        const dbType = (cfg.get<string>('database.type') || 'mysql') as any;
+        const dbUrl = cfg.get<string>('database.url');
+        const dbSsl = cfg.get<any>('database.ssl');
+
+        const baseOpts: any = {
+          type: dbType,
+          entities: Object.values(Entities),
+          synchronize: true,
+          logging: false,
+        };
+
+        if (dbUrl) {
+          baseOpts.url = dbUrl;
+          if (dbSsl !== undefined) baseOpts.ssl = dbSsl;
+        } else {
+          baseOpts.host = cfg.get<string>('database.host');
+          baseOpts.port = cfg.get<number>('database.port');
+          baseOpts.username = cfg.get<string>('database.user');
+          baseOpts.password = cfg.get<string>('database.password');
+          baseOpts.database = cfg.get<string>('database.name');
+          if (dbSsl !== undefined) baseOpts.ssl = dbSsl;
+        }
+
+        return baseOpts;
+      },
       dataSourceFactory: async (options) => {
         if (process.env.DATABASE_TYPE === 'memory') {
           const { getOrCreateMemoryDataSource } = await import('./database/in-memory-db');
@@ -77,6 +92,14 @@ import { ComplianceBridgeModule } from './modules/compliance-bridge/compliance-b
         const { DataSource } = await import('typeorm');
         const ds = new DataSource(options!);
         await ds.initialize();
+        if (process.env.AUTO_SEED === 'true' || process.env.RUN_SEED === 'true') {
+          try {
+            const { runSeed } = await import('./seed/run-seed');
+            await runSeed(ds);
+          } catch (seedErr) {
+            console.warn('Auto-seed check/execution:', seedErr);
+          }
+        }
         return ds;
       },
       inject: [ConfigService],

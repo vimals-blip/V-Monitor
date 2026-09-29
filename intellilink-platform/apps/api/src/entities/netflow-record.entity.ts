@@ -36,6 +36,6 @@ export class NetflowRecordEntity {
   deviceIp: string;
 
   @Index()
-  @CreateDateColumn({ type: 'datetime', precision: 6 })
+  @CreateDateColumn()
   createdAt: Date;
 }
