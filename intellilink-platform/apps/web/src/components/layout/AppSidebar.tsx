@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, MapPin, Network, Server,
   Shield, ShieldCheck, Activity, Bell, AlertTriangle, Cpu, Bot,
   FileText, History, Settings, HeartPulse, Workflow,
-  Radio, Shuffle, Globe2, Terminal, Sparkles
+  Radio, Shuffle, Globe2, Terminal, Sparkles, BookOpen
 } from 'lucide-react';
 
 const navItems = [
@@ -41,6 +41,7 @@ const navItems = [
     { label: 'AI Assistant', href: '/ai-assistant', icon: Bot },
   ]},
   { group: 'System & Reports', items: [
+    { label: 'Help & Guide', href: '/help', icon: BookOpen },
     { label: 'Reports', href: '/reports', icon: FileText },
     { label: 'Audit Logs', href: '/audit', icon: History },
     { label: 'System Health', href: '/system-health', icon: HeartPulse },
