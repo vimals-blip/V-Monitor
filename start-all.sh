@@ -5,8 +5,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLATFORM_DIR="${SCRIPT_DIR}/intellilink-platform"
-LOGS_DIR="${SCRIPT_DIR}/logs"
+if [ -d "${SCRIPT_DIR}/apps" ]; then
+  PLATFORM_DIR="${SCRIPT_DIR}"
+else
+  PLATFORM_DIR="${SCRIPT_DIR}/intellilink-platform"
+fi
+LOGS_DIR="${PLATFORM_DIR}/logs"
 mkdir -p "${LOGS_DIR}"
 
 GREEN='\033[0;32m'

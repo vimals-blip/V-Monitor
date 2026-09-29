@@ -6,11 +6,11 @@ import {
   ShieldCheck, Network, Cpu, Radio, Shuffle, Users, MapPin,
   Server, Globe2, Activity, Bell, AlertTriangle, Workflow,
   Bot, HeartPulse, History, Settings, ExternalLink, HelpCircle,
-  Laptop, CheckCircle2, Shield, Layers, RefreshCw
+  Laptop, CheckCircle2, Shield, Layers, RefreshCw, Home, Wifi, Zap, Sliders
 } from 'lucide-react';
 
 export default function HelpAndGuidePage() {
-  const [activeTab, setActiveTab] = useState<'zero-setup' | 'connect-devices' | 'multi-tenant' | 'ui-matrix' | 'protocols'>('zero-setup');
+  const [activeTab, setActiveTab] = useState<'zero-setup' | 'connect-devices' | 'community-starlink' | 'multi-tenant' | 'ui-matrix' | 'protocols'>('zero-setup');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [hostIp, setHostIp] = useState('192.168.2.212');
 
@@ -27,6 +27,56 @@ export default function HelpAndGuidePage() {
   };
 
   const agentCommand = `curl -sSL http://${hostIp}:3001/api/v1/network-discovery/agent/install.sh | sudo bash`;
+
+  const mikrotikConfig = `# ==========================================================
+# MikroTik RouterOS v7 - Community Starlink 5-Home Template
+# ==========================================================
+/interface bridge add name=bridge-community
+/interface vlan
+add interface=bridge-community name=vlan101-home1 vlan-id=101
+add interface=bridge-community name=vlan102-home2 vlan-id=102
+add interface=bridge-community name=vlan103-home3 vlan-id=103
+add interface=bridge-community name=vlan104-home4 vlan-id=104
+add interface=bridge-community name=vlan105-home5 vlan-id=105
+
+/ip address
+add address=10.10.1.1/24 interface=vlan101-home1
+add address=10.10.2.1/24 interface=vlan102-home2
+add address=10.10.3.1/24 interface=vlan103-home3
+add address=10.10.4.1/24 interface=vlan104-home4
+add address=10.10.5.1/24 interface=vlan105-home5
+
+/ip pool
+add name=pool-home1 ranges=10.10.1.50-10.10.1.200
+add name=pool-home2 ranges=10.10.2.50-10.10.2.200
+add name=pool-home3 ranges=10.10.3.50-10.10.3.200
+add name=pool-home4 ranges=10.10.4.50-10.10.4.200
+add name=pool-home5 ranges=10.10.5.50-10.10.5.200
+
+/ip dhcp-server
+add address-pool=pool-home1 interface=vlan101-home1 name=dhcp-home1 disabled=no
+add address-pool=pool-home2 interface=vlan102-home2 name=dhcp-home2 disabled=no
+add address-pool=pool-home3 interface=vlan103-home3 name=dhcp-home3 disabled=no
+add address-pool=pool-home4 interface=vlan104-home4 name=dhcp-home4 disabled=no
+add address-pool=pool-home5 interface=vlan105-home5 name=dhcp-home5 disabled=no
+
+# Prevent Cross-Home Inter-VLAN Traffic (Neighbor Privacy)
+/ip firewall filter
+add chain=forward action=drop in-interface=vlan101-home1 out-interface=vlan102-home2
+add chain=forward action=drop in-interface=vlan101-home1 out-interface=vlan103-home3
+add chain=forward action=drop in-interface=vlan102-home2 out-interface=vlan101-home1
+add chain=forward action=drop in-interface=vlan102-home2 out-interface=vlan103-home3
+
+# Export Real-Time IPFIX NetFlow to V-Monitor
+/ip traffic-flow set enabled=yes
+/ip traffic-flow target add dst-address=${hostIp} port=2055 version=ipfix`;
+
+  const linuxCommunityCmd = `# 1. Enable IPv4 Routing & Subnet Forwarding
+sudo sysctl -w net.ipv4.ip_forward=1
+echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
+
+# 2. Enroll Master Linux Edge Box into V-Monitor as Area Gateway
+curl -sSL http://${hostIp}:3001/api/v1/network-discovery/agent/install.sh | sudo GATEWAY_ROLE=COMMUNITY_AREA_ROUTER bash`;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -69,9 +119,10 @@ export default function HelpAndGuidePage() {
         {[
           { id: 'zero-setup', label: '1. Zero-Network Setup Runbook', icon: Sparkles },
           { id: 'connect-devices', label: '2. Connect Routers & Laptops (Agent)', icon: Terminal },
-          { id: 'multi-tenant', label: '3. Multi-Tenant Client Architecture', icon: Users },
-          { id: 'ui-matrix', label: '4. Full UI Tabs & Modules Directory', icon: Layers },
-          { id: 'protocols', label: '5. Hardware Ports & Protocols', icon: Network },
+          { id: 'community-starlink', label: '3. Community Starlink & Multi-Home WISP', icon: Radio },
+          { id: 'multi-tenant', label: '4. Multi-Tenant Client Architecture', icon: Users },
+          { id: 'ui-matrix', label: '5. Full UI Tabs & Modules Directory', icon: Layers },
+          { id: 'protocols', label: '6. Hardware Ports & Protocols', icon: Network },
         ].map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -256,7 +307,351 @@ export default function HelpAndGuidePage() {
         </div>
       )}
 
-      {/* TAB 3: MULTI-TENANT CLIENT ONBOARDING */}
+      {/* TAB 3: COMMUNITY STARLINK & MULTI-HOME WISP SETUP */}
+      {activeTab === 'community-starlink' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-6 shadow-sm">
+            {/* Header */}
+            <div className="border-b border-slate-200 dark:border-[#222E45] pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Radio className="w-5 h-5 text-cyan-500" />
+                  Community Starlink & Multi-Home WISP Architecture
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  How to safely distribute, govern, rate-limit, and monitor 5, 20, 50, or 100+ separate homes or local area routers using a single Starlink dish without session drops, IP conflicts, or neighbor eavesdropping.
+                </p>
+              </div>
+              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0 self-start md:self-auto flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Anti-Starvation QoS Active
+              </span>
+            </div>
+
+            {/* Architecture Overview Diagram */}
+            <div className="p-4 rounded-xl bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800 space-y-3">
+              <div className="text-cyan-400 font-semibold text-[11px] uppercase tracking-wider flex items-center gap-2">
+                <Network className="w-4 h-4 text-cyan-400" />
+                <span>Physical Community Topology: 1 Starlink Dish ➔ Area Master Router ➔ Multiple Isolated Homes</span>
+              </div>
+              <pre className="overflow-x-auto text-[11px] leading-relaxed text-slate-300">
+{`   [ 🛰️ STARLINK LEO SATELLITE (Constellation in Space) ]
+                      │
+                      │ Ka-Band Phased-Array Beam (200 Mbps Down / 25 Mbps Up)
+                      ▼
+   [ 📡 STARLINK DISH ON MAST / TOWER (IP 192.168.100.1 - Bypass Mode) ]
+                      │
+                      │ High-Speed Cable (PoE Injector ➔ Gigabit Ethernet)
+                      ▼ WAN1 (100.64.x.x Carrier CGNAT)
+┌────────────────────────────────────────────────────────────────────────┐
+│      AREA MASTER GATEWAY / ROUTER (MikroTik RouterOS or Linux Box)     │
+│  • V-Monitor Discovery Agent Running (Telemetry + NetFlow UDP 2055)     │
+│  • Persistent WireGuard Tunnel to Sovereign Core PoP (UDP 51820)       │
+│  • Anti-Bufferbloat & Fair-Share QoS Engine (Cake / FQ-CoDel)          │
+│  • Firewall Drop Rules: Strict Isolation Between Home Subnets          │
+└───────┬────────────────────────┬───────────────────────┬───────────────┘
+        │ VLAN 101               │ VLAN 102              │ VLAN 103 (PtMP Wireless)
+        ▼ (Port 2)               ▼ (Port 3)              ▼ (Outdoor AP)
+┌───────────────┐        ┌───────────────┐       ┌───────────────────────┐
+│ HOME 1 ROUTER │        │ HOME 2 ROUTER │       │ HOME 3 OUTDOOR CPE    │
+│ Subnet:       │        │ Subnet:       │       │ Subnet:               │
+│ 10.10.1.0/24  │        │ 10.10.2.0/24  │       │ 10.10.3.0/24          │
+│ Guaranteed:   │        │ Guaranteed:   │       │ Guaranteed:           │
+│ 15 Mbps CIR   │        │ 15 Mbps CIR   │       │ 15 Mbps CIR           │
+│ Max Burst:    │        │ Max Burst:    │       │ Max Burst:            │
+│ 80 Mbps PIR   │        │ 80 Mbps PIR   │       │ 80 Mbps PIR           │
+└───────────────┘        └───────────────┘       └───────────────────────┘`}
+              </pre>
+            </div>
+
+            {/* The 4 Core Challenges & Platform Solutions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <Sliders className="w-4 h-4" />
+                  <span>1. Anti-Starvation Bandwidth Shaping (QoS)</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>The Problem:</strong> When Home 1 downloads large 4K movies or games, it saturates the 200 Mbps dish, causing Zoom calls and gaming in Homes 2 & 3 to freeze.
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>V-Monitor Fix:</strong> Our dynamic <strong>Fair-Share QoS (/traffic-shaping)</strong> allocates a Committed Information Rate (CIR, e.g. 15 Mbps) to every home. When the satellite has surplus capacity, homes burst up to 80 Mbps. Heavy downloaders are throttled proportionally without affecting neighbors.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>2. Cryptographic Privacy & Zero Cross-Talk</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>The Problem:</strong> On unmanaged switches, Home 1 can scan the network and discover Home 2&apos;s smart TVs, NAS drives, security cameras, and laptops.
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>V-Monitor Fix:</strong> Each home is placed in a dedicated 802.1Q VLAN (VLAN 101, 102...) with private subnets (<code className="text-blue-400">10.10.X.0/24</code>). Inter-VLAN routing is blocked at the firewall. Homes only communicate with the internet, never with each other.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400">
+                  <Radio className="w-4 h-4" />
+                  <span>3. Starlink CGNAT & Dynamic IP Handoffs</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>The Problem:</strong> Starlink does not provide a public static IP; it uses Carrier-Grade NAT (<code className="text-purple-400">100.64.0.0/10</code>) and constantly shifts ground stations as satellites pass overhead.
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>V-Monitor Fix:</strong> The Area Gateway maintains an outbound WireGuard tunnel (<code className="text-purple-400">UDP 51820</code>) with <code className="text-purple-400">PersistentKeepalive = 25</code> to the V-Monitor Sovereign PoP. Satellite beam handoffs happen seamlessly in under 800ms without breaking VPN or VoIP sessions.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <Users className="w-4 h-4" />
+                  <span>4. Independent Multi-Tenant Customer Portal</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>The Problem:</strong> Homeowners want to know how much data they used, check why their internet feels slow, and verify their monthly bill.
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <strong>V-Monitor Fix:</strong> Create each home in <Link href="/tenants" className="text-blue-400 hover:underline">/tenants</Link> and invite the homeowner to <Link href="/portal" className="text-blue-400 hover:underline">/portal</Link>. They get their own branded dashboard showing live graphs, speed, and monthly usage, with zero visibility into other homes.
+                </p>
+              </div>
+            </div>
+
+            {/* Step-by-Step Runbook */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                5-Step Implementation Runbook
+              </h3>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center text-[10px]">1</span>
+                  <span>Enable Bypass Mode on the Starlink Dish</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 pl-7">
+                  Power on the Starlink Gen 2/3 dish. In the official Starlink mobile app, navigate to <strong>Settings ➔ Advanced ➔ Bypass Mode</strong> and enable it. Connect the Starlink Ethernet adapter directly to Port 1 (WAN) of your Area Master Router.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center text-[10px]">2</span>
+                  <span>Enroll Area Master Gateway into V-Monitor</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 pl-7">
+                  Choose your gateway platform below and run the configuration script to connect telemetry, NetFlow traffic export, and health monitoring to this V-Monitor server:
+                </p>
+
+                {/* Script Tabs: MikroTik vs Linux */}
+                <div className="pl-7 pt-2 space-y-3">
+                  {/* Linux Command */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Option A: Universal Linux Master Gateway (Ubuntu / Debian / Alpine):
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(linuxCommunityCmd, 'linux-comm')}
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-all"
+                      >
+                        {copiedId === 'linux-comm' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400 text-[11px]">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span className="text-[11px]">Copy Linux Commands</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="bg-slate-900 text-emerald-400 font-mono text-[11px] p-3 rounded-lg border border-slate-800 overflow-x-auto select-all">
+                      {linuxCommunityCmd}
+                    </pre>
+                  </div>
+
+                  {/* MikroTik Command */}
+                  <div className="space-y-1.5 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Option B: MikroTik RouterOS v7 Script (Auto VLANs, DHCP & NetFlow Export):
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(mikrotikConfig, 'mikrotik-comm')}
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-all"
+                      >
+                        {copiedId === 'mikrotik-comm' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400 text-[11px]">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span className="text-[11px]">Copy MikroTik Script</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="bg-slate-900 text-cyan-300 font-mono text-[11px] p-3 rounded-lg border border-slate-800 overflow-x-auto max-h-56 select-all">
+                      {mikrotikConfig}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center text-[10px]">3</span>
+                  <span>Distribute Connections to Individual Homes</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 pl-7">
+                  Run Ethernet cables or outdoor PtMP wireless radios (e.g. Ubiquiti AirMax / Cambium) to each home.
+                  Plug the home&apos;s Wi-Fi router WAN port into their designated port/VLAN.
+                  Their router automatically receives a private IP via DHCP (e.g. <code className="text-blue-400">10.10.1.50</code>) with default gateway <code className="text-blue-400">10.10.1.1</code>. Zero manual configuration is required by the home owner!
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center text-[10px]">4</span>
+                  <span>Configure Bandwidth Policies in V-Monitor</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 pl-7">
+                  Open <Link href="/policies" className="text-blue-400 hover:underline">/policies</Link> and select the policy profile <strong>COMMUNITY_STARLINK_FAIR_SHARE</strong>. This activates dynamic congestion management: when total bandwidth exceeds 85%, video streaming and bulk downloads are smoothly shaped to protect interactive browsing and voice calls.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#0D121D] border border-slate-200 dark:border-[#1E293B] space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center text-[10px]">5</span>
+                  <span>Monitor Live Usage & Alerting</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 pl-7">
+                  Track real-time traffic breakdown in <Link href="/traffic-shaping" className="text-blue-400 hover:underline">/traffic-shaping</Link> and latency in <Link href="/telemetry" className="text-blue-400 hover:underline">/telemetry</Link>. Set up threshold alerts in <Link href="/alerts" className="text-blue-400 hover:underline">/alerts</Link> for satellite rain fade, high jitter, or dish obstruction.
+                </p>
+              </div>
+            </div>
+
+            {/* Subnet Planning & Policy Matrix */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Recommended Community Subnet & Bandwidth Matrix
+              </h3>
+              <div className="overflow-x-auto border border-slate-200 dark:border-[#222E45] rounded-lg">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-100 dark:bg-[#162032] text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-[#222E45]">
+                    <tr>
+                      <th className="p-3">Home / Subscriber</th>
+                      <th className="p-3">VLAN ID</th>
+                      <th className="p-3">Assigned Subnet</th>
+                      <th className="p-3">Default Gateway</th>
+                      <th className="p-3">Guaranteed (CIR)</th>
+                      <th className="p-3">Burst Ceiling (PIR)</th>
+                      <th className="p-3">Firewall Isolation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-[#1E293B] text-slate-600 dark:text-slate-400">
+                    <tr className="hover:bg-slate-50 dark:hover:bg-[#151D2C]">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-cyan-400" /> Home 1 (Villa North)
+                      </td>
+                      <td className="p-3 font-mono text-cyan-400">101</td>
+                      <td className="p-3 font-mono">10.10.1.0/24</td>
+                      <td className="p-3 font-mono">10.10.1.1</td>
+                      <td className="p-3 text-emerald-400 font-medium">15 Mbps</td>
+                      <td className="p-3 text-blue-400 font-medium">80 Mbps</td>
+                      <td className="p-3 text-emerald-400 font-medium">Strict Drop Inter-VLAN</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50 dark:hover:bg-[#151D2C]">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-cyan-400" /> Home 2 (Cottage South)
+                      </td>
+                      <td className="p-3 font-mono text-cyan-400">102</td>
+                      <td className="p-3 font-mono">10.10.2.0/24</td>
+                      <td className="p-3 font-mono">10.10.2.1</td>
+                      <td className="p-3 text-emerald-400 font-medium">15 Mbps</td>
+                      <td className="p-3 text-blue-400 font-medium">80 Mbps</td>
+                      <td className="p-3 text-emerald-400 font-medium">Strict Drop Inter-VLAN</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50 dark:hover:bg-[#151D2C]">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-cyan-400" /> Home 3 (Farmhouse West)
+                      </td>
+                      <td className="p-3 font-mono text-cyan-400">103</td>
+                      <td className="p-3 font-mono">10.10.3.0/24</td>
+                      <td className="p-3 font-mono">10.10.3.1</td>
+                      <td className="p-3 text-emerald-400 font-medium">15 Mbps</td>
+                      <td className="p-3 text-blue-400 font-medium">80 Mbps</td>
+                      <td className="p-3 text-emerald-400 font-medium">Strict Drop Inter-VLAN</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50 dark:hover:bg-[#151D2C]">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-cyan-400" /> Home 4 (Office Cabin)
+                      </td>
+                      <td className="p-3 font-mono text-cyan-400">104</td>
+                      <td className="p-3 font-mono">10.10.4.0/24</td>
+                      <td className="p-3 font-mono">10.10.4.1</td>
+                      <td className="p-3 text-emerald-400 font-medium">25 Mbps</td>
+                      <td className="p-3 text-blue-400 font-medium">100 Mbps</td>
+                      <td className="p-3 text-emerald-400 font-medium">Strict Drop Inter-VLAN</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50 dark:hover:bg-[#151D2C]">
+                      <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-cyan-400" /> Home 5 (Community Center)
+                      </td>
+                      <td className="p-3 font-mono text-cyan-400">105</td>
+                      <td className="p-3 font-mono">10.10.5.0/24</td>
+                      <td className="p-3 font-mono">10.10.5.1</td>
+                      <td className="p-3 text-emerald-400 font-medium">10 Mbps</td>
+                      <td className="p-3 text-blue-400 font-medium">50 Mbps</td>
+                      <td className="p-3 text-emerald-400 font-medium">Strict Drop Inter-VLAN</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Quick Action Navigation Buttons */}
+            <div className="pt-2 flex flex-wrap gap-2.5">
+              <Link
+                href="/traffic-shaping"
+                className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Open Traffic Shaping & QoS</span>
+              </Link>
+              <Link
+                href="/policies"
+                className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#162032] dark:hover:bg-[#1D2B44] border border-slate-200 dark:border-[#222E45] text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                <span>Configure Policies</span>
+              </Link>
+              <Link
+                href="/portal"
+                className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#162032] dark:hover:bg-[#1D2B44] border border-slate-200 dark:border-[#222E45] text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                <Users className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Test Customer Portal View</span>
+              </Link>
+              <Link
+                href="/network-map"
+                className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#162032] dark:hover:bg-[#1D2B44] border border-slate-200 dark:border-[#222E45] text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                <Globe2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>View Global Network Map</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: MULTI-TENANT CLIENT ONBOARDING */}
       {activeTab === 'multi-tenant' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-6 shadow-sm">
@@ -316,7 +711,7 @@ export default function HelpAndGuidePage() {
         </div>
       )}
 
-      {/* TAB 4: UI MATRIX & DIRECTORY */}
+      {/* TAB 5: UI MATRIX & DIRECTORY */}
       {activeTab === 'ui-matrix' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-6 shadow-sm">
@@ -388,7 +783,7 @@ export default function HelpAndGuidePage() {
         </div>
       )}
 
-      {/* TAB 5: PROTOCOLS & HARDWARE PORTS */}
+      {/* TAB 6: PROTOCOLS & HARDWARE PORTS */}
       {activeTab === 'protocols' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-6 space-y-6 shadow-sm">
