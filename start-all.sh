@@ -42,7 +42,7 @@ if lsof -ti :3001 >/dev/null 2>&1; then
 else
   echo -n "Starting Backend API Core (Port 3001) ... "
   (cd "${PLATFORM_DIR}/apps/api" && \
-    nohup env DATABASE_TYPE=mysql DATABASE_HOST=127.0.0.1 DATABASE_PORT=3306 DATABASE_USER=root DATABASE_PASSWORD=root DATABASE_NAME=intellilink_db \
+    setsid env DATABASE_TYPE=mysql DATABASE_HOST=127.0.0.1 DATABASE_PORT=3306 DATABASE_USER=root DATABASE_PASSWORD=root DATABASE_NAME=intellilink_db \
     node dist/main.js </dev/null > "${LOGS_DIR}/api.log" 2>&1 &)
   
   # Wait for API health check
@@ -61,7 +61,7 @@ if lsof -ti :3000 >/dev/null 2>&1; then
 else
   echo -n "Starting Web NOC Frontend (Port 3000) ... "
   (cd "${PLATFORM_DIR}/apps/web" && \
-    nohup npm run start -- -p 3000 </dev/null > "${LOGS_DIR}/web.log" 2>&1 &)
+    setsid npm run start -- -p 3000 </dev/null > "${LOGS_DIR}/web.log" 2>&1 &)
 
   for i in {1..15}; do
     if curl -s -I http://localhost:3000 >/dev/null 2>&1; then
@@ -78,7 +78,7 @@ if lsof -ti :8100 >/dev/null 2>&1; then
 else
   echo -n "Starting AI Inference Engine (Port 8100) ... "
   (cd "${PLATFORM_DIR}/apps/ai-service" && \
-    nohup python3 -m uvicorn main:app --port 8100 </dev/null > "${LOGS_DIR}/ai.log" 2>&1 &)
+    setsid python3 -m uvicorn main:app --port 8100 </dev/null > "${LOGS_DIR}/ai.log" 2>&1 &)
 
   for i in {1..10}; do
     if curl -s http://localhost:8100/health >/dev/null 2>&1; then
@@ -95,7 +95,7 @@ if pgrep -f "apps/simulator" >/dev/null 2>&1; then
 else
   echo -n "Starting Edge Telemetry Simulator ... "
   (cd "${PLATFORM_DIR}" && \
-    nohup npm run dev:simulator </dev/null > "${LOGS_DIR}/simulator.log" 2>&1 &)
+    setsid npm run dev:simulator </dev/null > "${LOGS_DIR}/simulator.log" 2>&1 &)
   echo -e "${GREEN}✓ Simulator is active.${NC}"
 fi
 
