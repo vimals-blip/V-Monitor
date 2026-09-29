@@ -70,6 +70,26 @@ The complete, authoritative documentation suite is maintained in [`docs/`](docs/
 
 ---
 
+## ⚡ Quick One-Click Service Management (.sh scripts)
+
+Manage all platform services with simple automated scripts:
+
+```bash
+# 1. Start all services (MySQL check, Core API, Web NOC, AI Engine, Simulator)
+./start-all.sh
+
+# 2. Check health and status of all services
+./status.sh
+
+# 3. Stop all running services cleanly
+./stop-all.sh
+
+# 4. Run automated Initial Setup & Network Onboarding via CLI
+./onboard-network.sh "Company Network Name"
+```
+
+---
+
 ## 🚀 Quick Verification
 
 ```bash
