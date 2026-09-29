@@ -89,13 +89,12 @@ else
   echo -e "${GREEN}✓ AI Engine is UP.${NC}"
 fi
 
-# 6. Start Edge Simulator (Optional Background Traffic)
+# 6. Start Edge Simulator (Real-Time Telemetry Generator)
 if pgrep -f "apps/simulator" >/dev/null 2>&1; then
   echo -e "${YELLOW}○ Simulator is already running.${NC}"
 else
   echo -n "Starting Edge Telemetry Simulator ... "
-  (cd "${PLATFORM_DIR}" && \
-    setsid npm run dev:simulator </dev/null > "${LOGS_DIR}/simulator.log" 2>&1 &)
+  setsid node "${PLATFORM_DIR}/apps/simulator/dist/main.js" </dev/null > "${LOGS_DIR}/simulator.log" 2>&1 &
   echo -e "${GREEN}✓ Simulator is active.${NC}"
 fi
 

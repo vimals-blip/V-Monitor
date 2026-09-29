@@ -96,8 +96,16 @@ export class TelemetryService {
     });
   }
 
+  private cachedTotalSamples: number = 2600000;
+  private lastCountCheck: number = 0;
+
   async getFabricOverview() {
-    const totalSamples = await this.metricRepo.count();
+    const now = Date.now();
+    if (now - this.lastCountCheck > 30000) {
+      this.lastCountCheck = now;
+      this.metricRepo.count().then(c => { this.cachedTotalSamples = c; }).catch(() => {});
+    }
+    const totalSamples = this.cachedTotalSamples;
     
     const recentWan = await this.metricRepo.find({
       where: { sourceType: 'WAN' },
