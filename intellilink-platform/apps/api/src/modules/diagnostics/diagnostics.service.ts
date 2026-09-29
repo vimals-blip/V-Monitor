@@ -60,6 +60,9 @@ export class DiagnosticsService {
       switch (body.type) {
         case 'PING':
           diagnosticResult = await this.executeLivePing(host, body.count || 4);
+          if (!diagnosticResult.isReachable || diagnosticResult.packetLossPercent === 100 || diagnosticResult.received === 0) {
+            status = 'FAILURE';
+          }
           break;
 
         case 'DNS_RESOLUTION':
@@ -174,6 +177,7 @@ export class DiagnosticsService {
       transmitted,
       received,
       packetLossPercent,
+      isReachable: received > 0 && packetLossPercent < 100,
       rttMinMs,
       rttAvgMs,
       rttMaxMs,
@@ -402,7 +406,49 @@ export class DiagnosticsService {
       this.logger.debug(`ARP neighbor discovery for terminal targets note: ${e.message}`);
     }
 
-    return targets;
+    const checkedTargets = await Promise.all(
+      targets.map(async (t) => {
+        if (t.type === 'LOCAL') {
+          return { ...t, sshAvailable: true, name: `💻 [LOCAL HOST] ${t.name} (Direct Bash Shell)` };
+        }
+        const isOpen = await this.checkPort(t.host, 22, 150);
+        return {
+          ...t,
+          sshAvailable: isOpen,
+          name: isOpen ? `🟢 [SSH ACTIVE] ${t.name}` : `⚠️ [NO SSH DAEMON] ${t.name}`,
+        };
+      })
+    );
+
+    checkedTargets.sort((a, b) => {
+      if (a.type === 'LOCAL') return -1;
+      if (b.type === 'LOCAL') return 1;
+      if (a.sshAvailable && !b.sshAvailable) return -1;
+      if (!a.sshAvailable && b.sshAvailable) return 1;
+      return 0;
+    });
+
+    return checkedTargets;
+  }
+
+  private checkPort(host: string, port = 22, timeoutMs = 150): Promise<boolean> {
+    return new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(timeoutMs);
+      socket.on('connect', () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.on('timeout', () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.on('error', () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.connect(port, host);
+    });
   }
 
   async executeTerminalCommand(
@@ -521,9 +567,20 @@ export class DiagnosticsService {
             clearTimeout(timeout);
             if (!settled) {
               settled = true;
+              let friendlyMessage = `SSH Error (${host}:${port}): ${err.message}.`;
+              if (err.message.includes('ECONNREFUSED')) {
+                friendlyMessage = `SSH Port ${port} Connection Refused on ${host}.\n` +
+                  `The remote device is reachable on the network, but does NOT have an SSH server (sshd) listening on port ${port}.\n\n` +
+                  `• If this is a Linux VM / server: enable and start SSH ('sudo systemctl enable --now ssh').\n` +
+                  `• If it uses a custom SSH port (e.g. 2222): enter it in the SSH Credentials panel above.\n` +
+                  `• To run commands directly on this V-Monitor server: switch Target Node to 'Local Host Controller'.`;
+              } else if (err.message.includes('All configured authentication methods failed')) {
+                friendlyMessage = `SSH Authentication Failed for ${username}@${host}:${port}.\n` +
+                  `Please provide valid SSH credentials (user / password or private key) in the SSH Credentials settings.`;
+              }
               resolve({
                 stdout: '',
-                stderr: `SSH Error (${host}:${port}): ${err.message}. Provide valid SSH credentials (user/password or private key) to run commands on this remote node.`,
+                stderr: friendlyMessage,
                 code: 1,
               });
             }

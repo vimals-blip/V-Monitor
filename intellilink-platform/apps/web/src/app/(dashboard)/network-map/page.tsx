@@ -8,12 +8,12 @@ import {
   ArrowDown, RefreshCw, X, Radio, Activity, CheckCircle2,
   HardDrive, Zap, Send, ShieldCheck, Terminal, Search,
   RotateCw, Key, AlertTriangle, Layers, LayoutGrid, List,
-  Wifi, Satellite, Check, Copy, Flame, Sparkles
+  Wifi, Satellite, Check, Copy, Flame, Sparkles, Power
 } from 'lucide-react';
 
 export default function NetworkMapPage() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [probeOutput, setProbeOutput] = useState<{ loading: boolean; text?: string; success?: boolean } | null>(null);
+  const [probeOutput, setProbeOutput] = useState<{ loading: boolean; text?: string; success?: boolean; packetLoss?: number; rttAvgMs?: number } | null>(null);
   const [remediationLoading, setRemediationLoading] = useState(false);
   const [remediationResult, setRemediationResult] = useState<any>(null);
   const [probeTarget, setProbeTarget] = useState('8.8.8.8');
@@ -79,10 +79,16 @@ export default function NetworkMapPage() {
       return res.data;
     },
     onSuccess: (data) => {
+      const res = data.result || {};
+      const received = res.received ?? 0;
+      const loss = res.packetLossPercent ?? 100;
+      const isReachable = received > 0 && loss < 100 && data.status !== 'FAILURE';
       setProbeOutput({
         loading: false,
-        text: data.result?.rawOutput || data.result?.output || JSON.stringify(data.result, null, 2),
-        success: data.status === 'SUCCESS',
+        text: res.rawOutput || res.output || JSON.stringify(res, null, 2),
+        success: isReachable,
+        packetLoss: loss,
+        rttAvgMs: res.rttAvgMs,
       });
     },
     onError: (err: any) => {
@@ -90,6 +96,7 @@ export default function NetworkMapPage() {
         loading: false,
         text: err.response?.data?.message || err.message,
         success: false,
+        packetLoss: 100,
       });
     },
   });
@@ -666,97 +673,161 @@ export default function NetworkMapPage() {
               )}
 
               {/* Carrier Uplink & Satellite Details */}
-              <div className="bg-slate-50 dark:bg-[#121824] p-4 rounded-xl border border-slate-200 dark:border-[#222E45] space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
-                    <Satellite className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-                    Carrier WAN Uplink &amp; Telemetry Provider Details
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
-                    BGP AS14593 ACTIVE
-                  </span>
-                </div>
+              {(() => {
+                const nodeIp = selectedNode.targetIp || selectedNode.ipAddress || selectedNode.hostname?.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.') || '';
+                const isLanNode = Boolean(nodeIp.match(/^(192\.168|10\.|172\.)/));
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
-                  <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
-                    <span className="text-slate-500 text-[10px] block">PRIMARY CARRIER</span>
-                    <span className="text-slate-900 dark:text-white font-bold text-xs mt-0.5 block truncate">
-                      {selectedNode.carrier?.providerName || 'Starlink LEO Satellite'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
-                    <span className="text-slate-500 text-[10px] block">CIRCUIT BANDWIDTH</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs mt-0.5 block">
-                      {selectedNode.carrier?.type === 'SATELLITE' ? '220M / 35M' : '1 Gbps Full'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
-                    <span className="text-slate-500 text-[10px] block">SATELLITE DISH SNR</span>
-                    <span className="text-blue-600 dark:text-cyan-400 font-bold text-xs mt-0.5 block">
-                      9.4 dB (14 Sats)
-                    </span>
-                  </div>
-                  <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
-                    <span className="text-slate-500 text-[10px] block">BACKUP HOT-STANDBY</span>
-                    <span className="text-indigo-600 dark:text-purple-400 font-bold text-xs mt-0.5 block truncate">
-                      Verizon 5G Wireless
-                    </span>
-                  </div>
-                </div>
-              </div>
+                if (isLanNode) {
+                  return (
+                    <div className="bg-slate-50 dark:bg-[#121824] p-4 rounded-xl border border-slate-200 dark:border-[#222E45] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
+                          <Network className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
+                          Local Physical Interface &amp; Link Details
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                          PHYSICAL ETHERNET (eno1)
+                        </span>
+                      </div>
 
-              {/* Actionable Remediation Buttons */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
+                        <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                          <span className="text-slate-500 text-[10px] block">CONNECTION TYPE</span>
+                          <span className="text-slate-900 dark:text-white font-bold text-xs mt-0.5 block truncate">
+                            LAN Ethernet (eno1)
+                          </span>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                          <span className="text-slate-500 text-[10px] block">INTERFACE SPEED</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs mt-0.5 block">
+                            1 Gbps Full Duplex
+                          </span>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                          <span className="text-slate-500 text-[10px] block">HARDWARE MAC</span>
+                          <span className="text-blue-600 dark:text-cyan-400 font-bold text-xs mt-0.5 block truncate">
+                            {selectedNode.macAddress || selectedNode.serialNumber || 'Discovered NIC'}
+                          </span>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                          <span className="text-slate-500 text-[10px] block">SUBNET SEGMENT</span>
+                          <span className="text-indigo-600 dark:text-purple-400 font-bold text-xs mt-0.5 block truncate">
+                            {nodeIp.split('.').slice(0, 3).join('.')}.0/24
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="bg-slate-50 dark:bg-[#121824] p-4 rounded-xl border border-slate-200 dark:border-[#222E45] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
+                        <Satellite className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
+                        Carrier WAN Uplink &amp; Telemetry Details
+                      </h3>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
+                        WAN LINK ACTIVE
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
+                      <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                        <span className="text-slate-500 text-[10px] block">PRIMARY CARRIER</span>
+                        <span className="text-slate-900 dark:text-white font-bold text-xs mt-0.5 block truncate">
+                          {selectedNode.carrier?.providerName || 'Dedicated Enterprise DIA'}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                        <span className="text-slate-500 text-[10px] block">CIRCUIT BANDWIDTH</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs mt-0.5 block">
+                          {selectedNode.carrier?.bandwidthDownMbps ? `${selectedNode.carrier.bandwidthDownMbps} Mbps` : '1 Gbps Full'}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                        <span className="text-slate-500 text-[10px] block">LINK STATUS</span>
+                        <span className="text-blue-600 dark:text-cyan-400 font-bold text-xs mt-0.5 block">
+                          {selectedNode.status || 'ACTIVE'}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-white dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45]">
+                        <span className="text-slate-500 text-[10px] block">LINK PRIORITY</span>
+                        <span className="text-indigo-600 dark:text-purple-400 font-bold text-xs mt-0.5 block truncate">
+                          Primary Tier-1
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Actionable Operations & System Controls */}
               <div className="space-y-3">
                 <h3 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  Actionable Outage Fixes &amp; Control Operations
+                  Real System Controls &amp; Remediation Operations
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                   {/* Auto-Remediate */}
                   <button
                     onClick={() => handleExecuteRemediation('AUTO_REMEDIATE')}
                     disabled={remediationLoading}
-                    className="p-3.5 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-left shadow-md transition-all disabled:opacity-50 group"
+                    className="p-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-left shadow-sm transition-all disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2 font-bold text-xs">
                       <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>Auto-Remediate (AI Playbook)</span>
+                      <span>Auto-Remediate</span>
                     </div>
-                    <p className="text-[11px] text-blue-100 mt-1">
-                      Flushes ARP, verifies ICMP path, switches to backup carrier, and restores ONLINE state.
+                    <p className="text-[10px] text-blue-100 mt-1 leading-snug">
+                      Flushes ARP, executes real ICMP probe, and updates health based on actual ping.
                     </p>
                   </button>
 
-                  {/* Starlink Satellite Failover */}
+                  {/* Reboot System */}
                   <button
-                    onClick={() => handleExecuteRemediation('FAILOVER_SATELLITE')}
+                    onClick={() => handleExecuteRemediation('REBOOT')}
                     disabled={remediationLoading}
-                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#121824] hover:bg-slate-100 dark:hover:bg-[#1A2333] border border-slate-200 dark:border-[#222E45] hover:border-purple-400 text-left transition-all disabled:opacity-50"
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#121824] hover:bg-slate-100 dark:hover:bg-[#1A2333] border border-slate-200 dark:border-[#222E45] hover:border-amber-500 text-left transition-all disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
-                      <Satellite className="w-4 h-4 text-purple-500" />
-                      <span>Switch to Starlink Satellite</span>
+                      <RotateCw className="w-4 h-4 text-amber-500" />
+                      <span>Reboot Node</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      Forces immediate BGP route steering over high-throughput Starlink LEO constellation.
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      Verifies reachability and dispatches reboot instruction to edge node.
                     </p>
                   </button>
 
-                  {/* Flush ARP */}
+                  {/* Stop / Power Off */}
                   <button
-                    onClick={() => handleExecuteRemediation('FLUSH_ARP')}
+                    onClick={() => handleExecuteRemediation('SHUTDOWN')}
                     disabled={remediationLoading}
-                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#121824] hover:bg-slate-100 dark:hover:bg-[#1A2333] border border-slate-200 dark:border-[#222E45] hover:border-blue-400 text-left transition-all disabled:opacity-50"
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#121824] hover:bg-slate-100 dark:hover:bg-[#1A2333] border border-slate-200 dark:border-[#222E45] hover:border-rose-500 text-left transition-all disabled:opacity-50"
                   >
                     <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
-                      <RotateCw className="w-4 h-4 text-blue-500" />
-                      <span>Flush ARP &amp; Rebind NIC</span>
+                      <Power className="w-4 h-4 text-rose-500" />
+                      <span>Stop / Power Down</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      Executes kernel ARP table flush on physical NIC to eliminate stale MAC bindings.
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      Transitions node status to OFFLINE and halts operating services.
                     </p>
                   </button>
+
+                  {/* Launch Web Terminal */}
+                  <a
+                    href="/diagnostics"
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#121824] hover:bg-slate-100 dark:hover:bg-[#1A2333] border border-slate-200 dark:border-[#222E45] hover:border-cyan-500 text-left transition-all flex flex-col justify-between"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
+                      <Terminal className="w-4 h-4 text-cyan-400" />
+                      <span>Web Terminal Shell</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      Open interactive Linux bash shell to run real commands on this node.
+                    </p>
+                  </a>
                 </div>
 
                 {/* Remediation Execution Feedback */}
@@ -826,8 +897,10 @@ export default function NetworkMapPage() {
                   <div className="p-3 bg-white dark:bg-[#05080E] rounded-lg border border-slate-200 dark:border-[#222E45] text-[11px] space-y-1">
                     <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-[#222E45]">
                       <span className="text-slate-500 text-[10px]">KERNEL OUTPUT:</span>
-                      <span className={probeOutput.success ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-bold'}>
-                        {probeOutput.success ? 'REACHABLE (0% LOSS)' : 'PROBE FAILED'}
+                      <span className={probeOutput.success ? (probeOutput.packetLoss && probeOutput.packetLoss > 0 ? 'text-amber-500 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold') : 'text-rose-600 dark:text-rose-400 font-bold'}>
+                        {probeOutput.success
+                          ? `REACHABLE (${probeOutput.packetLoss || 0}% LOSS${probeOutput.rttAvgMs ? `, avg=${probeOutput.rttAvgMs}ms` : ''})`
+                          : `HOST UNREACHABLE (100% PACKET LOSS)`}
                       </span>
                     </div>
                     <pre className="text-slate-800 dark:text-slate-300 text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
