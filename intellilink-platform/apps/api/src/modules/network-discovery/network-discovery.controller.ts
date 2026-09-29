@@ -56,6 +56,12 @@ export class NetworkDiscoveryController {
     return this.service.fullLiveBootstrap(body, user);
   }
 
+  @Post('reset-to-zero')
+  @ApiOperation({ summary: 'Purge all dummy mock data and reset platform to 100% clean Zero-Data state' })
+  async resetToZero() {
+    return this.service.resetToZeroData();
+  }
+
   @Get('poller/status')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)

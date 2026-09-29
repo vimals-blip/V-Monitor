@@ -59,6 +59,21 @@ export default function InitialSetupPage() {
     },
   });
 
+  // 4. Reset to Clean Zero-Data Mutation
+  const resetZeroMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/network-discovery/reset-to-zero');
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries();
+      notify('✅ ' + (data?.message || 'Database reset to clean Zero-Data mode.'));
+    },
+    onError: (err: any) => {
+      alert('Reset error: ' + (err.response?.data?.message || err.message));
+    },
+  });
+
   const notify = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 5000);
@@ -114,6 +129,19 @@ export default function InitialSetupPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to purge all dummy mock data and reset the fleet to a clean 100% Zero-Data state? Real hardware will populate dynamically as devices connect.')) {
+                resetZeroMutation.mutate();
+              }
+            }}
+            disabled={resetZeroMutation.isPending}
+            className="px-3 py-1.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-sans text-xs font-semibold flex items-center gap-1.5 transition-all"
+            title="Wipe synthetic demo data and start with 0 gateways/sites"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${resetZeroMutation.isPending ? 'animate-spin' : ''}`} />
+            <span>{resetZeroMutation.isPending ? 'Purging...' : 'Purge Dummy Data (Zero-Mode)'}</span>
+          </button>
           <span className="px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             HOST INTERFACE: {primaryIface?.name || 'eno1'}

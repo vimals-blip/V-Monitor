@@ -73,7 +73,18 @@ export async function runSeed(externalDs?: DataSource) {
     }
   }
 
-  // 3. Create 4 PoPs
+  // 3. Clean Production / Zero-Data Mode Check:
+  // If SEED_DEMO_DATA !== 'true', do NOT insert any fake tenants, gateways, or mock links.
+  // The platform starts with 0 Gateways, 0 Sites, 0 Tunnels, and populates dynamically as real devices connect!
+  if (process.env.SEED_DEMO_DATA !== 'true') {
+    console.log('✨ Clean Production / Zero-Data Mode Initialized:');
+    console.log('   - Provider Admin: admin@intellilink.com / IntelliLink@2026');
+    console.log('   - 0 Dummy Gateways, 0 Dummy Sites, 0 Dummy Tenants, 0 Dummy Tunnels.');
+    console.log('   - Ready for real network onboarding and hardware agent enrollment.');
+    return;
+  }
+
+  // 4. Create 4 PoPs (Demo Mode Only)
   const popData = [
     { name: 'Mumbai Primary PoP', location: 'Navi Mumbai DataCenter', city: 'Mumbai', state: 'MH', lat: 19.0760, lng: 72.8777, isp: 'ISP Core West' },
     { name: 'Delhi NCR Governance PoP', location: 'Noida Tech Zone', city: 'Noida', state: 'UP', lat: 28.5355, lng: 77.3910, isp: 'ISP Core North' },

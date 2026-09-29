@@ -24,6 +24,7 @@ import { IncidentEntity } from '../../entities/incident.entity';
 import { AutomationRuleEntity } from '../../entities/automation-rule.entity';
 import { AlertEntity } from '../../entities/alert.entity';
 import { AlertRuleEntity } from '../../entities/alert-rule.entity';
+import { UserEntity } from '../../entities/user.entity';
 import { DataSource } from 'typeorm';
 import { AppEventsGateway } from '../../websocket/events.gateway';
 
@@ -619,16 +620,100 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Reset entire database to a pure Zero-Data state:
+   * Keeps ONLY the Provider Admin user and organization.
+   * Clears ALL tenants, sites, gateways, tunnels, links, metrics, alerts, and incidents.
+   */
+  async resetToZeroData() {
+    this.logger.log('Resetting platform to 100% Zero-Data State...');
+    const isPg = this.dataSource.options.type === 'postgres';
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      if (isPg) {
+        await qr.query('TRUNCATE TABLE alerts, incidents, tunnels, wan_links, gateways, routes, firewall_rules, nat_rules, policies, sites, aggregators, pops, tenants, metric_samples CASCADE');
+      } else {
+        await qr.query('SET FOREIGN_KEY_CHECKS = 0');
+        await qr.query('DELETE FROM metric_samples');
+        await qr.query('DELETE FROM alerts');
+        await qr.query('DELETE FROM incidents');
+        await qr.query('DELETE FROM tunnels');
+        await qr.query('DELETE FROM wan_links');
+        await qr.query('DELETE FROM gateways');
+        await qr.query('DELETE FROM routes');
+        await qr.query('DELETE FROM firewall_rules');
+        await qr.query('DELETE FROM nat_rules');
+        await qr.query('DELETE FROM policies');
+        await qr.query('DELETE FROM sites');
+        await qr.query('DELETE FROM aggregators');
+        await qr.query('DELETE FROM pops');
+        await qr.query('DELETE FROM tenants');
+        await qr.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+
+      await qr.commitTransaction();
+    } catch (err: any) {
+      await qr.rollbackTransaction();
+      this.logger.error('Failed during zero-data reset transaction', err);
+      throw err;
+    } finally {
+      await qr.release();
+    }
+
+    // Ensure Master Provider Organization exists
+    let org = await this.orgRepo.findOne({ where: {} });
+    if (!org) {
+      org = await this.orgRepo.save(
+        this.orgRepo.create({
+          id: uuidv4(),
+          name: 'Intellilink Operations',
+          slug: 'intellilink-operations',
+          type: 'PROVIDER',
+          isActive: true,
+        }),
+      );
+    }
+
+    // Ensure Admin User exists
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    let admin = await userRepo.findOne({ where: { email: 'admin@intellilink.com' } });
+    if (!admin) {
+      const bcrypt = await import('bcrypt');
+      const passHash = await bcrypt.hash('IntelliLink@2026', 10);
+      await userRepo.save(
+        userRepo.create({
+          id: uuidv4(),
+          email: 'admin@intellilink.com',
+          firstName: 'NOC',
+          lastName: 'Admin',
+          role: 'PROVIDER_ADMIN',
+          passwordHash: passHash,
+          organizationId: org.id,
+          isActive: true,
+        }),
+      );
+    }
+
+    return {
+      success: true,
+      mode: 'ZERO_DATA_PRODUCTION',
+      message: 'All dummy mock data has been purged. System is at clean 0. Real devices will populate and sync dynamically when connected.',
+      counts: {
+        tenants: 0,
+        sites: 0,
+        gateways: 0,
+        tunnels: 0,
+        wanLinks: 0,
+      },
+    };
+  }
+
+  /**
    * Complete Enterprise Live Bootstrap:
    * 1. Wipes all synthetic seed data across PoPs, Aggregators, Tenants, Sites, Gateways, WAN Links, Tunnels, Routes, Firewall, NAT, and Policies.
-   * 2. Detects the physical network and provisions a 100% genuine enterprise hierarchy:
-   *    - Client Production Tenant: "Intellilink Enterprise Production"
-   *    - Physical Core PoP & Aggregator linked to Cisco Core Gateway 192.168.0.50
-   *    - Physical Enterprise Site linked to subnet 192.168.0.0/20
-   *    - Ingests all 42+ discovered real physical hardware devices (Cisco, HP, Hyper-V, Intel, NVIDIA, Super Micro)
-   *    - Provisions genuine WireGuard encrypted tunnels to the Core Aggregator
-   *    - Injects genuine Linux kernel routes from `ip route`
-   *    - Provisions genuine enterprise firewall rules, NAT rules, and SD-WAN steering policies
+   * 2. Detects the physical network and provisions a 100% genuine enterprise hierarchy.
    */
   async fullLiveBootstrap(options?: { clientTenantName?: string; targetIps?: string[] }, user?: any) {
     this.logger.log('Starting Complete Enterprise Live Network Bootstrap & Demo Purge...');
@@ -636,27 +721,32 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
     const clientSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
 
     // 1. Safe cascade purge using DataSource transaction
+    const isPg = this.dataSource.options.type === 'postgres';
     const qr = this.dataSource.createQueryRunner();
     await qr.connect();
     await qr.startTransaction();
 
     try {
-      await qr.query('SET FOREIGN_KEY_CHECKS = 0');
-      // Delete demo data in reverse dependency order
-      await qr.query('DELETE FROM alerts');
-      await qr.query('DELETE FROM incidents');
-      await qr.query('DELETE FROM tunnels');
-      await qr.query('DELETE FROM wan_links');
-      await qr.query('DELETE FROM gateways');
-      await qr.query('DELETE FROM routes');
-      await qr.query('DELETE FROM firewall_rules');
-      await qr.query('DELETE FROM nat_rules');
-      await qr.query('DELETE FROM policies');
-      await qr.query('DELETE FROM sites');
-      await qr.query('DELETE FROM aggregators');
-      await qr.query('DELETE FROM pops');
-      await qr.query('DELETE FROM tenants');
-      await qr.query('SET FOREIGN_KEY_CHECKS = 1');
+      if (isPg) {
+        await qr.query('TRUNCATE TABLE alerts, incidents, tunnels, wan_links, gateways, routes, firewall_rules, nat_rules, policies, sites, aggregators, pops, tenants, metric_samples CASCADE');
+      } else {
+        await qr.query('SET FOREIGN_KEY_CHECKS = 0');
+        await qr.query('DELETE FROM metric_samples');
+        await qr.query('DELETE FROM alerts');
+        await qr.query('DELETE FROM incidents');
+        await qr.query('DELETE FROM tunnels');
+        await qr.query('DELETE FROM wan_links');
+        await qr.query('DELETE FROM gateways');
+        await qr.query('DELETE FROM routes');
+        await qr.query('DELETE FROM firewall_rules');
+        await qr.query('DELETE FROM nat_rules');
+        await qr.query('DELETE FROM policies');
+        await qr.query('DELETE FROM sites');
+        await qr.query('DELETE FROM aggregators');
+        await qr.query('DELETE FROM pops');
+        await qr.query('DELETE FROM tenants');
+        await qr.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
 
       await qr.commitTransaction();
     } catch (err: any) {
@@ -702,7 +792,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
       }),
     );
 
-    await this.dataSource.query('UPDATE users SET tenantId = ?', [tenant.id]);
+    await this.dataSource.getRepository(UserEntity).createQueryBuilder().update(UserEntity).set({ tenantId: tenant.id }).execute();
 
     // 4. Create Genuine Core PoP
     const pop = await this.popRepo.save(
