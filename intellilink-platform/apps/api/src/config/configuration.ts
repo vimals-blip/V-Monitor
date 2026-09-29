@@ -1,3 +1,9 @@
+if (process.env.DATABASE_TYPE === 'postgres' || process.env.DATABASE_URL?.startsWith('postgres')) {
+  if (process.env.DATABASE_SSL !== 'false') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
+}
+
 export default () => ({
   port: parseInt(process.env.PORT || '3001', 10),
   database: {
@@ -8,7 +14,7 @@ export default () => ({
     name: process.env.DATABASE_NAME || 'intellilink_db',
     user: process.env.DATABASE_USER || 'root',
     password: process.env.DATABASE_PASSWORD || 'root',
-    ssl: process.env.DATABASE_SSL === 'true' || !!(process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com')) ? { rejectUnauthorized: false } : (process.env.DATABASE_SSL === 'false' ? false : undefined),
+    ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

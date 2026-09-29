@@ -67,16 +67,19 @@ import { ComplianceBridgeModule } from './modules/compliance-bridge/compliance-b
           logging: false,
         };
 
+        if (dbType === 'postgres' && dbSsl) {
+          baseOpts.ssl = dbSsl;
+          baseOpts.extra = { ssl: dbSsl };
+        }
+
         if (dbUrl) {
           baseOpts.url = dbUrl;
-          if (dbSsl !== undefined) baseOpts.ssl = dbSsl;
         } else {
           baseOpts.host = cfg.get<string>('database.host');
           baseOpts.port = cfg.get<number>('database.port');
           baseOpts.username = cfg.get<string>('database.user');
           baseOpts.password = cfg.get<string>('database.password');
           baseOpts.database = cfg.get<string>('database.name');
-          if (dbSsl !== undefined) baseOpts.ssl = dbSsl;
         }
 
         return baseOpts;
