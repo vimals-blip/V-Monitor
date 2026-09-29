@@ -37,6 +37,7 @@ docs/
 | **07** | [**API & Integration Reference**](07_API_AND_INTEGRATION_REFERENCE.md) | Integration Engineers, DevOps | • Complete REST API Catalog (`/api/v1/*`)<br>• Dynamic Host Binding Logic (avoiding connection errors)<br>• WebSocket Message Payloads & Subscriptions<br>• DTO Specifications and Code Snippets |
 | **08** | [**Deployment & Operations Manual**](08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md) | SREs, Systems Administrators | • Production Ubuntu 22.04 LTS Bare-Metal Setup<br>• Environment Configurations (`.env` specifications)<br>• systemd Unit Files & Automated Recovery<br>• Database Backups & Runbooks for Connection/Bootstrap Errors |
 | **09** | [**Architecture & UI Feature Mapping**](09_ARCHITECTURE_CAPABILITY_AND_FEATURE_MAPPING.md) | Network Engineers, Product Owners, NOC Ops | • Complete Target Architecture Component Audit<br>• Exact UI Sidebar Group, Tab Name & URL Mapping<br>• Edge Agent Operation (Cisco GuestShell, MikroTik, Linux)<br>• Multi-WAN Underlay Orchestration (Fiber, 5G, Starlink) |
+| **10** | [**Zero-Network Setup & UI Navigation Guide**](10_ZERO_NETWORK_SETUP_AND_UI_NAVIGATION_GUIDE.md) | Presenters, Evaluators, Operators | • Starting from Zero Network (Step-by-Step)<br>• Initial Setup Wizard Breakdown (`/setup` Steps 1-4)<br>• Where Every Feature Is Located on the Screen<br>• Presenter Cheat Sheet & UI Click-by-Click Runbook |
 
 ---
 

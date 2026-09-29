@@ -38,6 +38,7 @@ The complete, authoritative documentation suite is maintained in [`docs/`](docs/
 | [**07. API & Integration Reference**](docs/07_API_AND_INTEGRATION_REFERENCE.md) | REST API endpoints, DTO contracts, dynamic client host resolution, and mTLS WebSocket telemetry streams. |
 | [**08. Deployment & Operations Manual**](docs/08_DEPLOYMENT_AND_OPERATIONS_MANUAL.md) | Production bare-metal installation, systemd unit files, environment configurations, backup routines, and troubleshooting runbooks. |
 | [**09. Architecture & UI Feature Mapping**](docs/09_ARCHITECTURE_CAPABILITY_AND_FEATURE_MAPPING.md) | Target architecture component audit, exact UI sidebar tabs and URL routes, edge agent operation, and transport failover. |
+| [**10. Zero-Network Setup & UI Navigation Guide**](docs/10_ZERO_NETWORK_SETUP_AND_UI_NAVIGATION_GUIDE.md) | Step-by-step UI visual breakdown, Initial Setup wizard (`/setup` Steps 1-4), where every feature is on screen, and presenter runbook. |
 
 ---
 
