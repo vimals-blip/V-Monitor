@@ -1,0 +1,50 @@
+# Render Blueprint for V-Monitor Platform
+# Docs: https://render.com/docs/blueprint-spec
+version: "1"
+
+services:
+  # 1. NestJS Backend API Core
+  - type: web
+    name: v-monitor-api
+    runtime: node
+    rootDir: intellilink-platform
+    plan: starter
+    region: frankfurt
+    buildCommand: npm install && npm run build -w apps/api
+    startCommand: node apps/api/dist/main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_TYPE
+        value: postgres
+      - key: AUTO_SEED
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vmonitor-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+  # 2. FastAPI AI Operations Engine (Optional)
+  - type: web
+    name: v-monitor-ai
+    runtime: python
+    rootDir: intellilink-platform/apps/ai-service
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: AI_MODEL
+        value: llama3.1
+
+databases:
+  # Managed PostgreSQL Database
+  - name: vmonitor-db
+    databaseName: intellilink_db
+    user: intellilink
+    plan: starter
+    region: frankfurt
