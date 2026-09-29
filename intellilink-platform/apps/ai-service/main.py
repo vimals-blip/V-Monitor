@@ -20,6 +20,11 @@ app.include_router(chat.router)
 app.include_router(analysis.router)
 app.include_router(anomaly.router)
 
+@app.get("/")
+@app.head("/")
+def root():
+    return {"status": "ok", "service": "intellilink-ai-engine", "version": "1.0.0"}
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "intellilink-ai-engine"}
