@@ -28,7 +28,7 @@ In enterprise IT and carrier telecommunications, **"Zero Network"** describes a 
 
 ## 2. Master UI Layout Architecture
 
-When you log into **V-Monitor** (`admin@intellilink.com` / `IntelliLink@2026`), the interface is divided into 3 primary zones:
+When you log into **V-Monitor** (`admin@intellilink.media` / `IntelliLink@2026`), the interface is divided into 3 primary zones:
 
 ```
 +----------------------------------------------------------------------------------------------------+

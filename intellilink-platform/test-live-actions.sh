@@ -13,7 +13,7 @@ echo "==========================================================================
 echo -n "🔑 1. Authenticating as NOC Administrator against MySQL... "
 LOGIN_RESP=$(curl -s -X POST "$API_BASE/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@intellilink.com","password":"IntelliLink@2026"}')
+  -d '{"email":"admin@intellilink.media","password":"IntelliLink@2026"}')
 
 TOKEN=$(echo "$LOGIN_RESP" | jq -r .accessToken)
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then

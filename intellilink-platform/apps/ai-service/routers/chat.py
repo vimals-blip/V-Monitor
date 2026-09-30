@@ -12,7 +12,7 @@ async def handle_chat(req: ChatRequest):
             # Login as NOC operator to obtain JWT
             login_resp = await client.post(
                 f"{API_BASE_URL}/auth/login",
-                json={"email": "admin@intellilink.com", "password": "IntelliLink@2026"}
+                json={"email": "admin@intellilink.media", "password": "IntelliLink@2026"}
             )
             token = login_resp.json().get("accessToken") if login_resp.status_code == 200 else None
 

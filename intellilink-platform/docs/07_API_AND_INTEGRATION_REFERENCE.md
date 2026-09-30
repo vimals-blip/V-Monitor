@@ -37,7 +37,7 @@ POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@intellilink.com",
+  "email": "admin@intellilink.media",
   "password": "IntelliLink@2026"
 }
 ```
@@ -50,7 +50,7 @@ Content-Type: application/json
   "expiresIn": 86400,
   "user": {
     "id": "c1f7b8a2-3e4d-4f5a-b6c7-8d9e0f1a2b3c",
-    "email": "admin@intellilink.com",
+    "email": "admin@intellilink.media",
     "firstName": "Intellilink",
     "lastName": "Administrator",
     "role": "PROVIDER_ADMIN",

@@ -678,14 +678,14 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
 
     // Ensure Admin User exists
     const userRepo = this.dataSource.getRepository(UserEntity);
-    let admin = await userRepo.findOne({ where: { email: 'admin@intellilink.com' } });
+    let admin = await userRepo.findOne({ where: [{ email: 'admin@intellilink.media' }, { email: 'admin@intellilink.com' }] as any });
     if (!admin) {
       const bcrypt = await import('bcrypt');
       const passHash = await bcrypt.hash('IntelliLink@2026', 10);
       await userRepo.save(
         userRepo.create({
           id: uuidv4(),
-          email: 'admin@intellilink.com',
+          email: 'admin@intellilink.media',
           firstName: 'NOC',
           lastName: 'Admin',
           role: 'PROVIDER_ADMIN',
@@ -798,14 +798,14 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
     const pop = await this.popRepo.save(
       this.popRepo.create({
         id: uuidv4(),
-        name: 'Enterprise Core PoP (192.168.0.50)',
-        location: 'Regional Datacenter Primary Hub',
-        city: 'Corporate Core',
-        state: 'Primary',
+        name: 'Primary Gateway PoP (192.168.0.50)',
+        location: 'Local LAN Gateway (192.168.0.50 via eno1)',
+        city: 'Local LAN',
+        state: 'Active',
         country: 'IN',
         latitude: 23.259934,
         longitude: 77.412615,
-        ispName: 'Cisco Carrier Ethernet Core Fabric',
+        ispName: 'Default Gateway (Cisco Core Fabric)',
         status: 'ONLINE',
         maxCapacityGbps: 100.0,
         maxTunnels: 10000,
@@ -817,7 +817,7 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
       this.aggregatorRepo.create({
         id: uuidv4(),
         popId: pop.id,
-        hostname: 'cisco-core-agg01.intellilink.net',
+        hostname: 'core-gw-192-168-0-50.lan',
         ipAddress: '192.168.0.50',
         version: 'v6.8.0-LTS',
         status: 'ONLINE',
@@ -833,17 +833,19 @@ export class NetworkDiscoveryService implements OnModuleInit, OnModuleDestroy {
         tenantId: tenant.id,
         organizationId: orgId,
         popId: pop.id,
-        name: 'Corporate HQ Campus (192.168.0.0/20)',
-        city: 'Corporate HQ',
-        address: 'Enterprise Networking Corridor',
-        state: 'Primary',
+        name: 'Local Physical LAN (192.168.0.0/20)',
+        city: 'Local Physical Network',
+        address: 'Subnet 192.168.0.0/20 (eno1)',
+        state: 'Active',
         country: 'IN',
         subnetCidr: '192.168.0.0/20',
         status: 'ONLINE',
         metadata: {
+          siteCode: 'SITE-LAN-01',
           defaultGateway: '192.168.0.50',
           hostInterface: 'eno1',
           autoDiscovered: true,
+          healthScore: 100,
         },
       }),
     );

@@ -234,9 +234,9 @@ export class PopsService {
 
     const carrierInterfaces = [
       {
-        name: 'eno1 (Carrier Lambda 1 - Primary 40G Optical)',
+        name: 'eno1 (Host Physical Interface - Primary Uplink)',
         state: 'UP',
-        speed: '40 Gbps Full Duplex',
+        speed: '1 Gbps Full Duplex',
         mtu: 1500,
         macAddress: 'ec:b1:d7:5e:d0:3c',
         rxBytesFormatted: `${(eno1Stats.rxBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`,

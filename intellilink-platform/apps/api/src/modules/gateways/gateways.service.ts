@@ -32,6 +32,7 @@ export class GatewaysService {
     if (user.tenantId) (where as any).tenantId = user.tenantId;
     else (where as any).organizationId = user.organizationId;
     if (query.search) (where as any).hostname = Like(`%${query.search}%`);
+    if ((query as any).siteId) (where as any).siteId = (query as any).siteId;
 
     const [data, total] = await this.repo.findAndCount({
       where,

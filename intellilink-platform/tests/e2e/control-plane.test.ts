@@ -10,7 +10,7 @@ describe('E2E Lifecycle: Login → Tenant → Site → Gateway → WAN → Tunne
 
   it('Step 1: Provider Admin Login', async () => {
     const res = await axios.post(`${API}/auth/login`, {
-      email: 'admin@intellilink.com',
+      email: 'admin@intellilink.media',
       password: 'IntelliLink@2026',
     });
     expect(res.status).toBe(200);

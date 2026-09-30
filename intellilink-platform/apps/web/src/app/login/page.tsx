@@ -6,7 +6,7 @@ import { ShieldCheck, AlertCircle, KeyRound, Mail, ArrowRight } from 'lucide-rea
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@intellilink.com');
+  const [email, setEmail] = useState('admin@intellilink.media');
   const [password, setPassword] = useState('IntelliLink@2026');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

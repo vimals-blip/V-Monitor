@@ -124,7 +124,7 @@ export function TopBar() {
               {user?.email ? user.email.slice(0, 2).toUpperCase() : 'AD'}
             </div>
             <div className="text-left hidden md:block">
-              <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-[130px]">{user?.email || 'admin@intellilink.com'}</p>
+              <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-[130px]">{user?.email || 'admin@intellilink.media'}</p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">Enterprise Admin</p>
             </div>
             <button

@@ -63,5 +63,5 @@ LAN_IP=$(ip -4 addr show dev eno1 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){
 if [ -n "$LAN_IP" ]; then
   echo "📡 LAN Access:     http://${LAN_IP}:3000"
 fi
-echo "🔑 Login:          admin@intellilink.com / IntelliLink@2026"
+echo "🔑 Login:          admin@intellilink.media / IntelliLink@2026"
 echo -e "${BLUE}=====================================================================${NC}"

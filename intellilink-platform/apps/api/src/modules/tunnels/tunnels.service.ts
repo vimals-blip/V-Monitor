@@ -120,9 +120,9 @@ export class TunnelsService {
 
     return {
       tunnelId: tunnel.id,
-      siteName: site?.name || 'Corporate HQ Campus (192.168.0.0/20)',
+      siteName: site?.name || 'Local Physical LAN (192.168.0.0/20)',
       gatewayHostname: gateway?.hostname || `edge-${edgeIp.replace(/\./g, '-')}`,
-      aggregatorHostname: aggregator?.hostname || 'cisco-core-agg01.intellilink.net',
+      aggregatorHostname: aggregator?.hostname || 'core-gw-192-168-0-50.lan',
       localEndpoint: tunnel.localEndpoint,
       remoteEndpoint: tunnel.remoteEndpoint,
       localSubnet: tunnel.localSubnet || `${edgeIp}/32`,

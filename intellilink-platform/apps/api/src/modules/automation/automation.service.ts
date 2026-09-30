@@ -256,7 +256,7 @@ export class AutomationService implements OnModuleInit {
           organizationId: user?.organizationId || rule.organizationId,
           tenantId: user?.tenantId || null,
           actorId: user?.id || uuidv4(),
-          actorEmail: user?.email || 'admin@intellilink.com',
+          actorEmail: user?.email || 'admin@intellilink.media',
           actorRole: user?.role || 'NETWORK_ADMIN',
           action: 'AUTOMATION_WAN_FAILOVER',
           resourceType: 'WAN_LINK',

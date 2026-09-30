@@ -55,7 +55,7 @@ export async function runSeed(externalDs?: DataSource) {
   // 2. Create Default Users
   const passHash = await bcrypt.hash('IntelliLink@2026', 10);
   const users = [
-    { email: 'admin@intellilink.com', firstName: 'NOC', lastName: 'Admin', role: 'PROVIDER_ADMIN' },
+    { email: 'admin@intellilink.media', firstName: 'NOC', lastName: 'Admin', role: 'PROVIDER_ADMIN' },
     { email: 'operator@intellilink.com', firstName: 'Lead', lastName: 'Operator', role: 'NOC_OPERATOR' },
     { email: 'auditor@intellilink.com', firstName: 'Sec', lastName: 'Auditor', role: 'AUDITOR' },
   ];
@@ -78,7 +78,7 @@ export async function runSeed(externalDs?: DataSource) {
   // The platform starts with 0 Gateways, 0 Sites, 0 Tunnels, and populates dynamically as real devices connect!
   if (process.env.SEED_DEMO_DATA !== 'true') {
     console.log('✨ Clean Production / Zero-Data Mode Initialized:');
-    console.log('   - Provider Admin: admin@intellilink.com / IntelliLink@2026');
+    console.log('   - Provider Admin: admin@intellilink.media / IntelliLink@2026');
     console.log('   - 0 Dummy Gateways, 0 Dummy Sites, 0 Dummy Tenants, 0 Dummy Tunnels.');
     console.log('   - Ready for real network onboarding and hardware agent enrollment.');
     return;
@@ -327,7 +327,7 @@ export async function runSeed(externalDs?: DataSource) {
   console.log(' - 70 Edge Gateways');
   console.log(' - 150 WAN Links (Fiber/Starlink/5G)');
   console.log(' - 100 WireGuard Encrypted Tunnels');
-  console.log(' - Credentials: admin@intellilink.com / IntelliLink@2026');
+  console.log(' - Credentials: admin@intellilink.media / IntelliLink@2026');
 
   if (!externalDs) {
     await dataSource.destroy();

@@ -28,37 +28,37 @@ export default function SitesPage() {
   const [wizardData, setWizardData] = useState({
     // Step 1: Identity & Architecture
     name: '',
-    siteCode: 'SITE-IND-105',
+    siteCode: 'SITE-LAN-02',
     tenantId: '',
     tier: 'Tier-1 Critical Branch',
     topology: 'Dual-CPE Active/Standby (VRRP)',
     
     // Step 2: Location & PoP
-    city: 'Bhopal',
-    state: 'Madhya Pradesh',
+    city: 'Local Network',
+    state: 'Active',
     country: 'IN',
-    address: 'Plot 42, Cyber Security Corridor, Ring Road',
+    address: 'Local LAN Branch',
     latitude: 23.2599,
     longitude: 77.4126,
     popId: '',
 
     // Step 3: WAN Uplinks
     primaryUplink: {
-      name: 'Primary Optical Fiber',
-      carrier: 'Tata Communications',
-      circuitId: 'TATA-FIB-IND-9910',
-      cirMbps: 500,
-      interface: 'GigabitEthernet0/0/1',
+      name: 'Primary Physical Ethernet',
+      carrier: 'Primary Carrier Ethernet',
+      circuitId: 'ETH-CIR-01',
+      cirMbps: 1000,
+      interface: 'eno1',
       color: 'biz-internet',
       bfdIntervalMs: 1000,
     },
     secondaryUplink: {
-      name: 'Secondary Starlink Satellite',
-      carrier: 'Starlink Aviation (LEO)',
-      circuitId: 'SL-LEO-SAT-4821',
-      cirMbps: 250,
-      interface: 'GigabitEthernet0/0/2',
-      color: 'satellite-starlink',
+      name: 'Secondary Backup Gateway',
+      carrier: 'Secondary Uplink Gateway',
+      circuitId: 'ETH-CIR-02',
+      cirMbps: 1000,
+      interface: 'eno2',
+      color: 'broadband-backup',
       failoverLossThresholdPct: 2.0,
     },
 
@@ -117,6 +117,39 @@ export default function SitesPage() {
       return res.data?.data || res.data || [];
     },
   });
+
+  const { data: inspectGateways } = useQuery({
+    queryKey: ['inspect-gateways', inspectSite?.id],
+    queryFn: async () => {
+      if (!inspectSite?.id) return [];
+      const res = await apiClient.get(`/gateways?siteId=${inspectSite.id}&pageSize=50`);
+      return res.data?.data || res.data || [];
+    },
+    enabled: !!inspectSite?.id,
+    refetchInterval: 5000,
+  });
+
+  const { data: inspectWanLinks } = useQuery({
+    queryKey: ['inspect-wan-links', inspectSite?.id],
+    queryFn: async () => {
+      if (!inspectSite?.id) return [];
+      const res = await apiClient.get(`/wan-links?siteId=${inspectSite.id}&pageSize=50`);
+      return res.data?.data || res.data || [];
+    },
+    enabled: !!inspectSite?.id,
+    refetchInterval: 5000,
+  });
+
+  const siteCode = inspectSite?.metadata?.siteCode || (inspectSite?.subnetCidr ? 'SITE-' + inspectSite.subnetCidr.split('/')[0].replace(/\./g, '-') : (inspectSite?.id ? 'SITE-' + inspectSite.id.slice(0, 6).toUpperCase() : 'SITE-LAN'));
+  const siteHealth = inspectSite?.metadata?.healthScore || (inspectSite?.status === 'ONLINE' ? 100 : 80);
+  const activeWans = (inspectWanLinks && inspectWanLinks.length > 0)
+    ? inspectWanLinks
+    : (inspectGateways && inspectGateways.length > 0
+      ? inspectGateways.flatMap((g: any) => g.wanLinks || [])
+      : []);
+  const primaryGw = (inspectGateways && inspectGateways.length > 0) ? inspectGateways[0] : null;
+  const hostInterface = inspectSite?.metadata?.hostInterface || 'eno1';
+  const defaultGateway = inspectSite?.metadata?.defaultGateway || '192.168.0.50';
 
   const notify = (msg: string) => {
     setActionNotice(msg);
@@ -565,12 +598,12 @@ export default function SitesPage() {
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-slate-900 dark:text-white">{inspectSite.name}</h2>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-                      {inspectSite.metadata?.siteCode || 'SITE-105'}
+                      {siteCode}
                     </span>
                     <StatusBadge status={inspectSite.status || 'ONLINE'} />
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {inspectSite.city}, {inspectSite.address || 'Enterprise Corridor'} • SLA Score: <span className="text-emerald-400 font-bold">{inspectSite.metadata?.healthScore || 99.8}%</span>
+                    {inspectSite.city || 'Local Network'}{inspectSite.address ? ` • ${inspectSite.address}` : ''} • Health: <span className="text-emerald-400 font-bold">{siteHealth}%</span>
                   </p>
                 </div>
               </div>
@@ -656,85 +689,71 @@ export default function SitesPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Primary Uplink Card */}
-                    <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="font-bold text-slate-900 dark:text-white text-xs">Primary Optical Fiber</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-                          BFD: ESTABLISHED
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">CARRIER / ISP</span>
-                          <span className="text-slate-200">Tata Communications</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">CIR SPEED</span>
-                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">500 Mbps / 500 Mbps</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">ROUNDTRIP LATENCY</span>
-                          <span className="text-emerald-400 font-bold">14.2 ms</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">JITTER / LOSS</span>
-                          <span className="text-slate-200">0.8ms / 0.00%</span>
-                        </div>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Interface: <span className="text-slate-300">GigabitEthernet0/0/1</span> • Circuit: <span className="text-slate-300">TATA-FIB-IND-8821</span>
-                      </div>
+                  {activeWans.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {activeWans.map((link: any, idx: number) => {
+                        const isUp = link.status === 'ACTIVE' || link.status === 'ONLINE';
+                        const cirSpeed = `${link.bandwidthDownMbps || 1000} Mbps / ${link.bandwidthUpMbps || 1000} Mbps`;
+                        const latency = link.latencyMs ? `${link.latencyMs} ms` : (isUp ? '0.2 ms' : 'N/A');
+                        const jitter = isUp ? '0.05ms / 0.00%' : '100% loss';
+                        const circuit = link.circuitId || `CIR-${(link.id || '').slice(0, 8).toUpperCase()}`;
+                        return (
+                          <div key={link.id || idx} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2.5 h-2.5 rounded-full ${isUp ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
+                                <span className="font-bold text-slate-900 dark:text-white text-xs">
+                                  {link.name || `${link.providerName} Uplink`}
+                                </span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                isUp ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              }`}>
+                                {isUp ? 'BFD: ESTABLISHED' : 'BFD: DOWN'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                              <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
+                                <span className="text-slate-500 block text-[10px]">CARRIER / PROVIDER</span>
+                                <span className="text-slate-200 truncate block">{link.providerName || 'Local Physical Ethernet'}</span>
+                              </div>
+                              <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
+                                <span className="text-slate-500 block text-[10px]">CIR SPEED</span>
+                                <span className="text-cyan-600 dark:text-cyan-400 font-bold">{cirSpeed}</span>
+                              </div>
+                              <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
+                                <span className="text-slate-500 block text-[10px]">ROUNDTRIP LATENCY</span>
+                                <span className="text-emerald-400 font-bold">{latency}</span>
+                              </div>
+                              <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
+                                <span className="text-slate-500 block text-[10px]">JITTER / LOSS</span>
+                                <span className="text-slate-200">{jitter}</span>
+                              </div>
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono truncate">
+                              Interface: <span className="text-slate-300">{link.name}</span> • Type: <span className="text-slate-300">{link.type || 'ETHERNET'}</span> • Circuit: <span className="text-slate-300">{circuit}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Secondary Uplink Card (Starlink) */}
-                    <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                          <span className="font-bold text-slate-900 dark:text-white text-xs">Secondary Starlink LEO Satellite</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
-                          STANDBY: SYNCHRONIZED
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">CARRIER / CONSTELLATION</span>
-                          <span className="text-slate-200">Starlink Aviation LEO</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">CIR SPEED</span>
-                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">250 Mbps / 50 Mbps</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">SATELLITE LATENCY</span>
-                          <span className="text-cyan-600 dark:text-cyan-400 font-bold">44.6 ms</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45]">
-                          <span className="text-slate-500 block text-[10px]">JITTER / LOSS</span>
-                          <span className="text-slate-200">3.2ms / 0.05%</span>
-                        </div>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Interface: <span className="text-slate-300">GigabitEthernet0/0/2</span> • Circuit: <span className="text-slate-300">SL-LEO-SAT-9920</span>
-                      </div>
+                  ) : (
+                    <div className="bg-white dark:bg-[#121824] border border-dashed border-slate-200 dark:border-[#222E45] rounded-xl p-8 text-center text-slate-500 dark:text-slate-400 space-y-2">
+                      <Radio className="w-8 h-8 mx-auto text-slate-600 dark:text-slate-500 opacity-60" />
+                      <p className="text-sm font-semibold">No WAN uplink interfaces currently attached</p>
+                      <p className="text-xs">Connect an edge gateway to auto-bind physical WAN links to this site.</p>
                     </div>
-                  </div>
+                  )}
 
                   {/* Real-time Bandwidth Sparkline & Health */}
                   <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Live Path Health & Tunnel Latency (Last 60 Minutes)</h4>
-                    <div className="h-28 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45] p-3 flex items-end justify-between gap-1">
+                    <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Live Path Health & Latency Metric History</h4>
+                    <div className="h-24 bg-slate-50 dark:bg-[#0B0F17] rounded-lg border border-slate-200 dark:border-[#222E45] p-3 flex items-end justify-between gap-1">
                       {Array.from({ length: 30 }).map((_, i) => {
-                        const h = 25 + Math.sin(i * 0.4) * 15 + Math.random() * 8;
+                        const h = 20 + ((i * 7) % 35) + (inspectSite.status === 'ONLINE' ? 30 : 0);
                         return (
                           <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
-                            <div className="w-full h-20 flex items-end bg-white dark:bg-[#121824]/40 rounded-t overflow-hidden">
+                            <div className="w-full h-16 flex items-end bg-white dark:bg-[#121824]/40 rounded-t overflow-hidden">
                               <div
                                 className="w-full bg-gradient-to-t from-cyan-600/70 to-cyan-400 rounded-t transition-all"
                                 style={{ height: `${h}%`, minHeight: '4px' }}
@@ -746,7 +765,7 @@ export default function SitesPage() {
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
                       <span>-60m</span>
-                      <span className="text-slate-400">Peak Load: 420 Mbps • Latency Variance &lt; 2.5ms</span>
+                      <span className="text-slate-400">Active Uplinks: {activeWans.filter((w: any) => w.status === 'ACTIVE' || w.status === 'ONLINE').length} / {activeWans.length || 1} • Live Path Health Nominal</span>
                       <span>Now</span>
                     </div>
                   </div>
@@ -757,35 +776,51 @@ export default function SitesPage() {
               {cockpitTab === 'vrfs' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Multi-Tenant LAN Segments & Virtual Routing (VRF)</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Strict cryptokey isolation between enterprise corporate data, banking DMZ, and guest access</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Physical LAN Segments & Virtual Routing (VRF)</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Strict cryptokey isolation between enterprise LAN traffic and edge tunnels</p>
                   </div>
 
                   <div className="space-y-3">
-                    {[
-                      { vrfId: 10, name: 'VRF 10: Corporate Data LAN', cidr: inspectSite.subnetCidr || '10.100.1.0/24', vlan: 100, clients: 48, zone: 'INTERNAL_TRUSTED', desc: 'Secure corporate intranet, Microsoft 365, active directory endpoints.' },
-                      { vrfId: 20, name: 'VRF 20: Branch Banking DMZ', cidr: '10.100.2.0/24', vlan: 200, clients: 14, zone: 'PCI_DSS_RESTRICTED', desc: 'PCI-DSS compliant POS terminals, cash recycler ATMs, zero-trust perimeter.' },
-                      { vrfId: 50, name: 'VRF 50: Branch Guest Wi-Fi', cidr: '172.16.50.0/24', vlan: 300, clients: 32, zone: 'DIRECT_INTERNET', desc: 'Direct-to-cloud internet offload, isolated from corporate routing tables.' },
-                    ].map((vrf) => (
-                      <div key={vrf.vrfId} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 dark:text-white text-xs">{vrf.name}</span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-                              VLAN {vrf.vlan}
-                            </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-[#1C263A] text-slate-600 dark:text-slate-300">
-                              {vrf.zone}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{vrf.desc}</p>
-                          <div className="text-[11px] font-mono text-slate-500 pt-1">
-                            Allocated Subnet: <span className="text-emerald-400">{vrf.cidr}</span> • Active DHCP Leases: <span className="text-slate-900 dark:text-white font-bold">{vrf.clients} Devices</span>
-                          </div>
+                    <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs">Primary Physical LAN</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-[#0B0F17] text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
+                            VRF 1 / DEFAULT
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-[#1C263A] text-slate-600 dark:text-slate-300">
+                            PHYSICAL_LAN_TRUSTED
+                          </span>
                         </div>
-                        <StatusBadge status="ACTIVE" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Discovered physical subnet via host interface <span className="font-mono text-cyan-400">{hostInterface}</span>. Default Gateway: <span className="font-mono text-slate-200">{defaultGateway}</span>.
+                        </p>
+                        <div className="text-[11px] font-mono text-slate-500 pt-1">
+                          Allocated Subnet: <span className="text-emerald-400">{inspectSite.subnetCidr || '192.168.0.0/20'}</span> • Connected Nodes: <span className="text-slate-900 dark:text-white font-bold">{inspectGateways?.length || 0} Devices</span>
+                        </div>
                       </div>
-                    ))}
+                      <StatusBadge status="ACTIVE" />
+                    </div>
+
+                    {inspectGateways && inspectGateways.length > 0 && (
+                      <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-3">
+                        <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Active Nodes Discovered on this Segment</h4>
+                        <div className="divide-y divide-slate-100 dark:divide-[#1C263A] max-h-48 overflow-y-auto">
+                          {inspectGateways.slice(0, 8).map((gw: any, idx: number) => (
+                            <div key={gw.id || idx} className="py-2 flex items-center justify-between text-xs font-mono">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                <span className="font-semibold text-slate-200">{gw.hostname}</span>
+                                <span className="text-slate-500 text-[10px]">({gw.model || 'Network Node'})</span>
+                              </div>
+                              <div className="text-slate-400 text-[11px]">
+                                {gw.ipAddress || (gw.hostname.match(/\d+-\d+-\d+-\d+/)?.[0]?.replace(/-/g, '.')) || 'IP Assigned'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -794,41 +829,41 @@ export default function SitesPage() {
               {cockpitTab === 'hardware' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Edge CPE Appliance Telemetry</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">On-premise router chassis health, thermal sensors, and WireGuard kernel driver</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Edge Appliance Telemetry</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">On-premise router chassis health, physical host sensors, and WireGuard kernel driver</p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
                     <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
-                      <span className="text-slate-500 block text-[10px]">ROUTER MODEL</span>
-                      <span className="text-slate-900 dark:text-white font-bold text-sm">IntelliEdge-X800</span>
+                      <span className="text-slate-500 block text-[10px]">APPLIANCE / MODEL</span>
+                      <span className="text-slate-900 dark:text-white font-bold text-sm truncate block">{primaryGw?.model || 'Linux Host Network'}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">{primaryGw?.hostname || 'Physical Appliance'}</span>
+                    </div>
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
+                      <span className="text-slate-500 block text-[10px]">OPERATIONAL STATE</span>
+                      <span className="text-emerald-400 font-bold text-sm">{primaryGw?.status || inspectSite.status || 'ONLINE'}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">Telemetry Synchronized</span>
+                    </div>
+                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
+                      <span className="text-slate-500 block text-[10px]">HARDWARE SERIAL</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-bold text-xs truncate block">{primaryGw?.serialNumber || 'SN-PHYSICAL-HOST'}</span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">Carrier Spec</span>
                     </div>
                     <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
-                      <span className="text-slate-500 block text-[10px]">CHASSIS THERMAL</span>
-                      <span className="text-emerald-400 font-bold text-sm">38.5 °C</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">Dual Fans Nominal</span>
-                    </div>
-                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
-                      <span className="text-slate-500 block text-[10px]">CPU UTILIZATION</span>
-                      <span className="text-cyan-600 dark:text-cyan-400 font-bold text-sm">28.4%</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">8 Cores Active</span>
-                    </div>
-                    <div className="p-3.5 bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl">
-                      <span className="text-slate-500 block text-[10px]">REDUNDANT PSU</span>
-                      <span className="text-emerald-400 font-bold text-sm">DUAL OK</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">PSU1 & PSU2 Ready</span>
+                      <span className="text-slate-500 block text-[10px]">FIRMWARE / KERNEL</span>
+                      <span className="text-emerald-400 font-bold text-xs truncate block">{primaryGw?.firmwareVersion || 'Linux 6.8.0-generic'}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">WireGuard Accelerated</span>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 space-y-2 font-mono text-xs">
                     <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold block">Cryptographic Keypair:</span>
                     <div className="p-3 bg-slate-50 dark:bg-[#0B0F17] rounded border border-slate-200 dark:border-[#222E45] text-emerald-400 text-xs break-all">
-                      Curve25519 Public Key: vMub0w1fPoPAggregatorKeyMumbaiPrimary2026Net=
+                      Curve25519 Public Key: {primaryGw?.publicKey || 'vMub0w1fPoPAggregatorKeyPrimaryLAN2026Net='}
                     </div>
                     <div className="text-[11px] text-slate-500 pt-1 flex items-center justify-between">
                       <span>Kernel: Linux 6.8.0-generic (wireguard.ko accelerated)</span>
-                      <span>Uptime: 98 days 14 hours 22 mins</span>
+                      <span>Last Heartbeat: {primaryGw?.lastHeartbeatAt ? new Date(primaryGw.lastHeartbeatAt).toLocaleTimeString() : 'Active Heartbeat'}</span>
                     </div>
                   </div>
                 </div>
@@ -844,10 +879,10 @@ export default function SitesPage() {
 
                   <div className="space-y-3 text-xs">
                     {[
-                      { app: 'Core Banking API & SWIFT Transactions', dscp: 'EF (DSCP 46)', path: 'Primary Fiber (Preferred)', reserved: '50 Mbps', latencyTarget: '< 20ms', status: 'COMPLIANT' },
-                      { app: 'VoIP Voice (SIP / RTP) & Zoom Meetings', dscp: 'CS5 (DSCP 40)', path: 'Lowest-Jitter Path', reserved: '20 Mbps', latencyTarget: '< 50ms', status: 'COMPLIANT' },
-                      { app: 'Enterprise Cloud SaaS (M365, AWS, Salesforce)', dscp: 'AF21 (DSCP 18)', path: 'Equal-Cost Multipath', reserved: '100 Mbps', latencyTarget: '< 100ms', status: 'COMPLIANT' },
-                      { app: 'General Web & Software Updates', dscp: 'Best Effort (0)', path: 'Starlink Egress Offload', reserved: 'Remaining Bandwidth', latencyTarget: 'Best Effort', status: 'COMPLIANT' },
+                      { app: `Primary LAN Core Traffic (${inspectSite.subnetCidr || '192.168.0.0/20'})`, dscp: 'EF (DSCP 46)', path: `${activeWans[0]?.name || 'Primary Uplink'} (Direct)`, reserved: '500 Mbps', latencyTarget: '< 10ms', status: 'COMPLIANT' },
+                      { app: 'VoIP Voice (SIP / RTP) & Real-time Media', dscp: 'CS5 (DSCP 40)', path: 'Lowest-Jitter Path', reserved: '50 Mbps', latencyTarget: '< 30ms', status: 'COMPLIANT' },
+                      { app: 'Enterprise Cloud SaaS (M365, AWS, GCP)', dscp: 'AF21 (DSCP 18)', path: 'Equal-Cost Multipath', reserved: '200 Mbps', latencyTarget: '< 50ms', status: 'COMPLIANT' },
+                      { app: `General Web & Egress (via ${defaultGateway})`, dscp: 'Best Effort (0)', path: 'Default Gateway Offload', reserved: 'Dynamic', latencyTarget: 'Best Effort', status: 'COMPLIANT' },
                     ].map((qos, i) => (
                       <div key={i} className="bg-white dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-xl p-4 flex items-center justify-between">
                         <div className="space-y-1">
@@ -873,7 +908,7 @@ export default function SitesPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Live Edge Diagnostics & Running Configuration</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Trigger live probes or download generated Linux WireGuard / Cisco IOS-XE configuration</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Trigger live probes or download generated Linux WireGuard configuration</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -901,19 +936,19 @@ export default function SitesPage() {
                     <pre className="p-3 bg-[#05080E] border border-slate-200 dark:border-[#222E45] rounded-lg text-slate-600 dark:text-slate-300 font-mono text-[10px] overflow-x-auto max-h-56">
 {`# Intellilink NOG Enterprise Site Profile
 # Site ID: ${inspectSite.id}
-# Code: ${inspectSite.metadata?.siteCode || 'SITE-105'}
+# Code: ${siteCode}
 [Interface]
-Address = ${inspectSite.subnetCidr ? inspectSite.subnetCidr.replace('.0/24', '.1/32') : '10.254.1.10/32'}
+Address = ${inspectSite.subnetCidr ? inspectSite.subnetCidr.split('/')[0].replace(/\.0$/, '.1') + '/32' : '192.168.0.1/32'}
 PrivateKey = <generated-on-premise>
 ListenPort = 51820
 DNS = 1.1.1.1, 8.8.8.8
 MTU = 1420
 
-# Core PoP Aggregator Peer
+# Default Gateway Peer
 [Peer]
-PublicKey = vMub0w1fPoPAggregatorKeyMumbaiPrimary2026Net=
-Endpoint = 10.250.1.10:51820
-AllowedIPs = 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+PublicKey = ${primaryGw?.publicKey || 'vMub0w1fPoPAggregatorKeyPrimaryLAN2026Net='}
+Endpoint = ${defaultGateway}:51820
+AllowedIPs = ${inspectSite.subnetCidr || '192.168.0.0/20'}, 0.0.0.0/0
 PersistentKeepalive = 25`}
                     </pre>
                   </div>

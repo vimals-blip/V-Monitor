@@ -39,7 +39,7 @@ When presenting to clients or stakeholders via video call (Google Meet, Zoom, Mi
 ### Step 1: Open the Platform Web Console
 1. Navigate to: `http://localhost:3000` (or `http://192.168.2.212:3000`).
 2. Log in with provider administrator credentials:
-   - **Email:** `admin@intellilink.com`
+   - **Email:** `admin@intellilink.media`
    - **Password:** `IntelliLink@2026`
 3. Point out the top header bar:
    - The green pulsing indicator: `100% LIVE NETWORK (192.168.0.0/20)`.

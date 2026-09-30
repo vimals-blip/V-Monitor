@@ -15,7 +15,7 @@ let authToken = '';
 async function login() {
   try {
     const res = await axios.post(`${API_BASE}/auth/login`, {
-      email: 'admin@intellilink.com',
+      email: 'admin@intellilink.media',
       password: 'IntelliLink@2026',
     });
     authToken = res.data.accessToken;

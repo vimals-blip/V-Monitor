@@ -20,7 +20,12 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string, ip: string) {
-    const user = await this.userRepo.findOne({ where: { email } });
+    let user = await this.userRepo.findOne({ where: { email } });
+    if (!user && (email === 'admin@intellilink.media' || email === 'admin@intellilink.com')) {
+      user = await this.userRepo.findOne({
+        where: [{ email: 'admin@intellilink.media' }, { email: 'admin@intellilink.com' }] as any,
+      });
+    }
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {

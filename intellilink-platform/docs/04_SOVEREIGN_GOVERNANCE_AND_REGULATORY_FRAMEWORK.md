@@ -120,7 +120,7 @@ curl -s http://localhost:8100/health
 
 ### Credentials & Access
 - **Web Dashboard:** `http://localhost:3000`
-- **Default NOC Administrator:** `admin@intellilink.com`
+- **Default NOC Administrator:** `admin@intellilink.media`
 - **Password:** `IntelliLink@2026`
 - **API Base URL:** `http://localhost:3001/api/v1`
 - **FastAPI AI Engine:** `http://localhost:8100`

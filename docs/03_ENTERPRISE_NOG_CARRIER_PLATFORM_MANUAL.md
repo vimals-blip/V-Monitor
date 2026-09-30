@@ -179,7 +179,7 @@ To deploy this platform on a client's actual organization network, follow these 
 
 ### Step 1: Discover Existing Network Infrastructure
 1. Log in to the Intellilink web portal (`http://<SERVER_IP>:3000`) using administrator credentials:
-   - **Email:** `admin@intellilink.com`
+   - **Email:** `admin@intellilink.media`
    - **Password:** `IntelliLink@2026`
 2. Navigate to **Gateways** in the sidebar.
 3. Review the green **Live Enterprise Network Connected** banner showing your host interface (`eno1`), host IP (`192.168.2.212`), and default gateway (`192.168.0.50`).

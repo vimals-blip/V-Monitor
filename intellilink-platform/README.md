@@ -38,5 +38,5 @@ By separating the **Transport Underlay** (satellite connectivity) from the **Gov
 - **Web Dashboard:** `http://localhost:3000`
 - **Control-Plane API:** `http://localhost:3001/api/v1`
 - **AIOps Engine:** `http://localhost:8100`
-- **Default NOC Administrator:** `admin@intellilink.com`
+- **Default NOC Administrator:** `admin@intellilink.media`
 - **Password:** `IntelliLink@2026`
