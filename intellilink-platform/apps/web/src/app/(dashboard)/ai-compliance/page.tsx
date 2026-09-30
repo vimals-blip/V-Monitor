@@ -200,7 +200,7 @@ const STATIC_FRAMEWORKS = [
 
 export default function AiComplianceIntegrationPage() {
   const [activeTab, setActiveTab] = useState<'tests' | 'findings' | 'risks' | 'audits' | 'evidence' | 'frameworks' | 'remote'>('tests');
-  const [activeSource, setActiveSource] = useState<'local' | 'cloud'>('local');
+  const [activeSource, setActiveSource] = useState<'local' | 'cloud'>('cloud');
 
   // Dynamic state fetched from V-Monitor core API integration bridge
   const [tests, setTests] = useState<AutomatedTest[]>([]);
@@ -224,9 +224,9 @@ export default function AiComplianceIntegrationPage() {
   const [testFilter, setTestFilter] = useState<'ALL' | 'PASS' | 'FAIL' | 'WARN'>('ALL');
   const [findingSeverityFilter, setFindingSeverityFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
 
-  const localUrl = 'http://localhost:3005';
   const cloudUrl = 'https://ai-compliance-web-five.vercel.app';
-  const currentRemoteUrl = activeSource === 'local' ? localUrl : cloudUrl;
+  const localUrl = 'http://localhost:3005';
+  const currentRemoteUrl = activeSource === 'cloud' ? cloudUrl : localUrl;
 
   const loadComplianceData = async () => {
     try {
@@ -375,6 +375,17 @@ export default function AiComplianceIntegrationPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center bg-slate-100 dark:bg-[#121824] border border-slate-200 dark:border-[#222E45] rounded-lg p-1 text-xs">
             <button
+              onClick={() => setActiveSource('cloud')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
+                activeSource === 'cloud'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Globe2 className="w-3.5 h-3.5" />
+              <span>Cloud Production (ai-compliance-web-five.vercel.app)</span>
+            </button>
+            <button
               onClick={() => setActiveSource('local')}
               className={`px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
                 activeSource === 'local'
@@ -384,17 +395,6 @@ export default function AiComplianceIntegrationPage() {
             >
               <Server className="w-3.5 h-3.5" />
               <span>Local Engine (:3005)</span>
-            </button>
-            <button
-              onClick={() => setActiveSource('cloud')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
-                activeSource === 'cloud'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Globe2 className="w-3.5 h-3.5" />
-              <span>Cloud Engine (Vercel)</span>
             </button>
           </div>
 
