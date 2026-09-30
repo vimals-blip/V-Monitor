@@ -35,7 +35,9 @@ By separating the **Transport Underlay** (satellite connectivity) from the **Gov
 
 ## Quick Access & Credentials
 
-- **Web Dashboard:** `http://localhost:3000`
+- **Live Cloud NOC:** `https://v-monitor.vercel.app/`
+- **AI Compliance Hub:** `https://ai-compliance-web-five.vercel.app/`
+- **Local Web Dashboard:** `http://localhost:3000`
 - **Control-Plane API:** `http://localhost:3001/api/v1`
 - **AIOps Engine:** `http://localhost:8100`
 - **Default NOC Administrator:** `admin@intellilink.media`

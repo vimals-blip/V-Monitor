@@ -1,5 +1,9 @@
 # V-Monitor (IntelliLink OS): Sovereign Carrier-Grade SD-WAN & AI-NOC Platform
 
+> 🌐 **Live Cloud NOC:** [https://v-monitor.vercel.app/](https://v-monitor.vercel.app/)  
+> 🛡️ **AI Compliance Hub:** [https://ai-compliance-web-five.vercel.app/](https://ai-compliance-web-five.vercel.app/)  
+> 🔑 **Demo Credentials:** `admin@intellilink.media` / `IntelliLink@2026`
+
 ## 1. Executive Overview
 
 **V-Monitor (IntelliLink OS)** is a sovereign, carrier-grade **Software-Defined Wide Area Network (SD-WAN)**, **Secure Access Service Edge (SASE)**, and **Autonomous Network Operations Center (A-NOC)** orchestration fabric. Engineered for Tier-1 telecom carriers, banking conglomerates, defense enclaves, and distributed enterprises, V-Monitor bridges the gap between bare-metal edge hardware and cloud-native control plane governance.
@@ -100,6 +104,7 @@ Bidirectional integration with Cloud Production ([`ai-compliance-web-five.vercel
 ./onboard-network.sh
 
 # 4. Access Web NOC Dashboard
-# URL: http://localhost:3000 (or http://<LAN_IP>:3000)
+# Live Cloud NOC: https://v-monitor.vercel.app/
+# Local URL: http://localhost:3000 (or http://<LAN_IP>:3000)
 # Credentials: admin@intellilink.media / IntelliLink@2026
 ```

@@ -1,11 +1,18 @@
 # IntelliLink OS (V-Monitor)
 ### Autonomous Multi-Orbit SD-WAN & Carrier Network Operations Center
 
+[![Live Cloud NOC](https://img.shields.io/badge/Live%20Cloud%20NOC-v--monitor.vercel.app-0070f3?style=for-the-badge&logo=vercel)](https://v-monitor.vercel.app/)
+[![AI Compliance Hub](https://img.shields.io/badge/AI%20Compliance%20Hub-ai--compliance--web--five.vercel.app-success?style=for-the-badge&logo=vercel)](https://ai-compliance-web-five.vercel.app/)
+
 [![Kernel: Linux 5.15+](https://img.shields.io/badge/Kernel-Linux%205.15%2B-blue.svg)](https://kernel.org)
 [![Backend: NestJS 10](https://img.shields.io/badge/API-NestJS%2010-red.svg)](https://nestjs.com)
 [![Frontend: Next.js 14](https://img.shields.io/badge/NOC-Next.js%2014-black.svg)](https://nextjs.org)
 [![AI Engine: FastAPI](https://img.shields.io/badge/AI%20Engine-FastAPI%20%7C%20Python-green.svg)](https://fastapi.tiangolo.com)
 [![Database: MySQL 8.0](https://img.shields.io/badge/Database-MySQL%208.0-orange.svg)](https://mysql.com)
+
+> 🌐 **Live Cloud NOC Production URL:** [https://v-monitor.vercel.app/](https://v-monitor.vercel.app/)  
+> 🛡️ **AI Compliance Hub:** [https://ai-compliance-web-five.vercel.app/](https://ai-compliance-web-five.vercel.app/)  
+> 🔑 **Demo Credentials:** `admin@intellilink.media` / `IntelliLink@2026`
 
 **IntelliLink OS** is an enterprise-grade Autonomous SD-WAN and Network Operations Center (NOC) platform engineered for carriers, telecom operators, multi-branch corporations, and mission-critical government infrastructure. 
 
